@@ -1,0 +1,12 @@
+# Ambientes Virtuais
+venv/
+env/
+.venv/
+
+# Arquivos do Python e Django
+__pycache__/
+*.pyc
+db.sqlite3
+
+# Arquivos de mídia (logos dos times que criamos)
+media/
