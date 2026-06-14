@@ -33,8 +33,8 @@ class Clube(models.Model):
         return f'{self.nome} ({self.sigla})'
 
 class Participacao(models.Model):
-    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE)
-    clube = models.ForeignKey(Clube, on_delete=models.CASCADE)
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='participacoes')
+    clube = models.ForeignKey(Clube, on_delete=models.CASCADE, related_name='participacoes')
 
     pontos = models.PositiveIntegerField(default=0)
     vitorias = models.PositiveIntegerField(default=0)
