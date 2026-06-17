@@ -27,7 +27,7 @@ def funcao_gerar_tabela(campeonato):
             # organizando mentalmente os times em fileira, vamos iniciar pegando os das pontas e aí ir entrando. Na primeira execução, participacoes[index_a] será o primeiro da fileira, enquanto participacoes[index_b] será o último. ao longo que a equipe_a for ficando mais à direita, automaticamente a equipe_b vai ficando mais à esquerda. Como esquema visual, pense na estrutura da regra para fazer a soma da PA.
             for i in range(total_jogos): 
                 index_a = i
-                index_b = (index_ultimo-1)-i
+                index_b = index_ultimo-i
 
                 equipe_a = participacoes[index_a]
                 equipe_b = participacoes[index_b]

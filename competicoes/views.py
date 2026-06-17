@@ -1,5 +1,5 @@
 from django.db.models import F
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Campeonato, Clube, Participacao, Partida
@@ -20,7 +20,7 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
 
         return Response(dicionario_classificacao)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post', 'get'])
     def gerar_tabela(self, request, pk=None):
         campeonato = self.get_object()
 
