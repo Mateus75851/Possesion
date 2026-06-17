@@ -24,6 +24,7 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
 
 
 
+
 class ClubeViewSet(viewsets.ModelViewSet):
     queryset = Clube.objects.all()
     serializer_class = ClubeSerializer
