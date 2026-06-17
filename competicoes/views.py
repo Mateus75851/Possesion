@@ -4,14 +4,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Campeonato, Clube, Participacao
 from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, ClassificacaoSerializer
-
+from .services import funcao_gerar_tabela
 
 class CampeonatoViewSet(viewsets.ModelViewSet):
     queryset = Campeonato.objects.all()
     serializer_class = CampeonatoSerializer
 
     @action(detail=True, methods=['get'])
-    def classificacao(self, request, pk=None):
+    def classificacao(self, request, pk=None): # coloquei o None como padrão porque pode ter algum teste ou algo do tipo que eu queira usar sem passar o pk
         campeonato = self.get_object()
         queryset_classificacao = campeonato.participacoes.annotate(
             saldo_de_gols=F('gols_feitos')-F('gols_sofridos')
@@ -20,11 +20,26 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
 
         return Response(dicionario_classificacao)
 
+    @action(detail=True, methods=['post'])
+    def gerar_tabela(self, request, pk=None):
+        campeonato = self.get_object()
 
+        try:
+            partidas = funcao_gerar_tabela(campeonato)
+            
+            return Response(
+                {"message": f"Tabela gerada com sucesso! {len(partidas)} partidas criadas."},
+                status=status.HTTP_201_CREATED
+            )
 
-
-
-
+        except ValueError as e:
+            # Se o erro for a falta de paridade ou campeonato já existente
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception:
+            # Caso ocorra qualquer outro erro imprevisto
+            return Response({"error": "Erro interno ao gerar a tabela."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 class ClubeViewSet(viewsets.ModelViewSet):
     queryset = Clube.objects.all()
     serializer_class = ClubeSerializer
