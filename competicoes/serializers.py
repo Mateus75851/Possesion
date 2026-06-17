@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao
+from .models import Campeonato, Clube, Participacao, Partida
 
 
 class CampeonatoSerializer(serializers.ModelSerializer):
@@ -16,6 +16,12 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participacao
         fields = '__all__'
+
+class PartidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Partida
+        fields = '__all__'
+
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
