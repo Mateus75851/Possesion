@@ -73,6 +73,8 @@ class PartidaSerializer(serializers.ModelSerializer):
 
                 participacao_visitante.pontos += 3
             
+            participacao_mandante.save()
+            participacao_visitante.save()
             
 
         return super().update(instance, validated_data)
