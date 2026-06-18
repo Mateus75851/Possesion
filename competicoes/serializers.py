@@ -29,6 +29,8 @@ class PartidaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'estatisticas_mandante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
         elif (estatisticas_visitante and not estatisticas_mandante):
             raise serializers.ValidationError({'estatisticas_visitante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
+        
+        return data
 
 
     def update(self, instance, validated_data):
