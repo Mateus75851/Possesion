@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao, Partida
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica
 
 
 class CampeonatoSerializer(serializers.ModelSerializer):
@@ -29,8 +29,10 @@ class PartidaSerializer(serializers.ModelSerializer):
         representacao['visitante'] = instance.visitante.clube.nome
         return representacao
 
-         
-    
+class EstatisticaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estatistica
+        fields = '__all__'
 
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
