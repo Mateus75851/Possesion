@@ -42,6 +42,8 @@ class Participacao(models.Model):
     derrotas = models.PositiveIntegerField(default=0)
     gols_feitos = models.PositiveIntegerField(default=0)
     gols_sofridos = models.PositiveIntegerField(default=0)
+    cartoes_amarelos = models.PositiveIntegerField(default=0)
+    cartoes_vermelhos = models.PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ('campeonato', 'clube')
@@ -65,7 +67,6 @@ class Estatistica(models.Model):
 class Partida(models.Model):
     class StatusPartida(models.TextChoices):
         PENDENTE = ('P', 'Pendente')
-        EM_ANDAMENTO = ('E', 'Em Andamento')
         FINALIZADA = ('F', 'Finalizada')
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='partidas')
     rodada = models.IntegerField()
