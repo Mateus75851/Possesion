@@ -22,6 +22,16 @@ class PartidaSerializer(serializers.ModelSerializer):
         model = Partida
         fields = '__all__'
 
+    def to_representation(self, instance):
+        representacao = super().to_representation(instance) # retorna um dicionário de primitivos
+        representacao['campeonato'] = instance.campeonato.__str__()
+        representacao['mandante'] = instance.mandante.clube.nome
+        representacao['visitante'] = instance.visitante.clube.nome
+        return representacao
+
+         
+    
+
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
