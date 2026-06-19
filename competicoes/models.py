@@ -68,6 +68,7 @@ class Partida(models.Model):
     class StatusPartida(models.TextChoices):
         PENDENTE = ('P', 'Pendente')
         FINALIZADA = ('F', 'Finalizada')
+        ADIADA = ('A', 'Adiada')
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='partidas')
     rodada = models.IntegerField()
     status = models.CharField(max_length=20,choices=StatusPartida.choices, default=StatusPartida.PENDENTE)

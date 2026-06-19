@@ -23,9 +23,18 @@ class PartidaSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
     def validate(self, data):
+        rodada = data.get('rodada') or getattr(self.instance, 'rodada', None)
         status = data.get('status') or getattr(self.instance, 'status', None)
         estatisticas_mandante = data.get('estatisticas_mandante') or getattr(self.instance, 'estatisticas_mandante', None)
         estatisticas_visitante = data.get('estatisticas_visitante') or getattr(self.instance, 'estatisticas_visitante', None)
+
+        if status == 'F':
+            # vai pegando rodada a rodada ANTES da rodada da partida, com o intuito de confirmar se não ficou nenhum jogo pendente no caminho. Dessa forma, o cliente só vai poder finalizar algum jogo na rodada 8 se todos os jogos da rodada 1 a 7 tiverem sido finalizados(ou adiados), por exemplo, impedindo o cliente de pular rodadas.
+            for rodada_anterior in range(1, rodada):
+                partidas = Partida.objects.filter(rodada=rodada_anterior)
+                for partida in partidas:
+                    if partida.status == 'P':
+                        raise serializers.ValidationError({'rodada': f'A partida {partida.__str__()} ainda está pendente'})
 
         if (estatisticas_mandante and not estatisticas_visitante):
             raise serializers.ValidationError({'estatisticas_mandante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
