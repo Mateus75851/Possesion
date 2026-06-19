@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao, EscalacaoSlot
 
 class CampeonatoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -122,6 +122,16 @@ class EstatisticaSerializer(serializers.ModelSerializer):
 class AtletaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Atleta
+        fields = '__all__'
+
+class EscalacaoaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Escalacao
+        fields = '__all__'
+
+class EscalacaoSlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EscalacaoSlot
         fields = '__all__'
 
 

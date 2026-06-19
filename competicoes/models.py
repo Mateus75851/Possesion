@@ -51,6 +51,34 @@ class Participacao(models.Model):
     def __str__(self):
         return f'{self.clube.sigla} no {self.campeonato.nome}'
 
+class Escalacao(models.Model):
+    clube = models.ForeignKey(Clube, on_delete=models.CASCADE)
+    partida = models.ForeignKey('Partida', on_delete=models.CASCADE)
+
+class EscalacaoSlot(models.Model):
+    class PosicaoAssumidaEscalacaoSlot(models.TextChoices):
+        GK = "GK", "Goleiro"
+        CB = "CB", "Zagueiro Central"
+        LB = "LB", "Lateral Esquerdo"
+        RB = "RB", "Lateral Direito"
+        LWB = "LWB", "Lateral Ofensivo Esquerdo"
+        RWB = "RWB", "Lateral Ofensivo Direito"
+        DM = "DM", "Volante"
+        CM = "CM", "Meio Campo Central"
+        AM = "AM", "Meia Ofensivo"
+        LM = "LM", "Ala Esquerdo"
+        RM = "RM", "Ala Direito"
+        LW = "LW", "Ponta Esquerda"
+        RW = "RW", "Ponta Direita"
+        CF = "CF", "Centroavante"
+        ST = "ST", "Atacante"
+
+    escalacao = models.ForeignKey(Escalacao, on_delete=models.CASCADE)
+    atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE)
+
+    numero_camisa = models.PositiveIntegerField()
+    posicao_assumida = models.CharField(max_length=20, choices=PosicaoAssumidaEscalacaoSlot.choices)
+
 class Estatistica(models.Model):
     gols = models.IntegerField(null=True,blank=True)
     chutes = models.IntegerField(null=True,blank=True)
@@ -78,6 +106,9 @@ class Partida(models.Model):
 
     estatisticas_mandante = models.OneToOneField(Estatistica, on_delete=models.SET_NULL, null=True, blank=True, related_name='partida_como_estatisticas_mandante')
     estatisticas_visitante = models.OneToOneField(Estatistica, on_delete=models.SET_NULL, null=True, blank=True, related_name='partida_como_estatisticas_visitante')
+
+    # escalacao_mandante = 
+    # escalacao_visitante =
 
     def __str__(self):
         return f'{self.mandante.clube.nome} x {self.visitante.clube.nome}'
