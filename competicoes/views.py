@@ -2,8 +2,8 @@ from django.db.models import F
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica
-from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta
+from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer
 from .services import funcao_gerar_tabela
 
 class CampeonatoViewSet(viewsets.ModelViewSet):
@@ -55,3 +55,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
 class EstatisticaViewSet(viewsets.ModelViewSet):
     queryset = Estatistica.objects.all()
     serializer_class = EstatisticaSerializer
+
+class AtletaViewSet(viewsets.ModelViewSet):
+    queryset = Atleta.objects.all()
+    serializer_class = AtletaSerializer

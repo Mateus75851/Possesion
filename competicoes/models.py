@@ -91,3 +91,30 @@ class Partida(models.Model):
             raise ValidationError({'mandante': f'O mandante não pertence ao campeonato {self.campeonato}'})
         if self.visitante.campeonato != self.campeonato:
             raise ValidationError({'visitante': f'O visitante não pertence ao campeonato {self.campeonato}'})
+        
+class Atleta(models.Model):
+    class PosicaoPrincipalAtleta(models.TextChoices):
+        GK = "GK", "Goleiro"
+        CB = "CB", "Zagueiro Central"
+        LB = "LB", "Lateral Esquerdo"
+        RB = "RB", "Lateral Direito"
+        LWB = "LWB", "Lateral Ofensivo Esquerdo"
+        RWB = "RWB", "Lateral Ofensivo Direito"
+        DM = "DM", "Volante"
+        CM = "CM", "Meio Campo Central"
+        AM = "AM", "Meia Ofensivo"
+        LM = "LM", "Ala Esquerdo"
+        RM = "RM", "Ala Direito"
+        LW = "LW", "Ponta Esquerda"
+        RW = "RW", "Ponta Direita"
+        CF = "CF", "Centroavante"
+        ST = "ST", "Atacante"
+
+    nome = models.CharField(max_length=50)
+    data_nascimento = models.DateField()
+    altura = models.DecimalField(max_digits=3, decimal_places=2)
+    peso = models.DecimalField(max_digits=3, decimal_places=1)
+    nacionalidade = models.CharField(max_length=40)
+
+    clube = models.ForeignKey(Clube, on_delete=models.SET_NULL, null=True, blank=True, related_name='elenco')
+    posicao_principal = models.CharField(max_length=20, choices=PosicaoPrincipalAtleta.choices)

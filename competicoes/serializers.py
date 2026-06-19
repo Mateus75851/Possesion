@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta
 
 class CampeonatoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -118,6 +118,12 @@ class EstatisticaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'chutes_a_gol': 'Não pode haver mais chutes a gol do que chutes totais'})
         
         return data
+    
+class AtletaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Atleta
+        fields = '__all__'
+
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
