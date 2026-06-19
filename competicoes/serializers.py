@@ -22,6 +22,7 @@ class PartidaSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
     def validate(self, data):
+        status = data.get('status') or getattr(self.instance, 'status', None)
         estatisticas_mandante = data.get('estatisticas_mandante') or getattr(self.instance, 'estatisticas_mandante', None)
         estatisticas_visitante = data.get('estatisticas_visitante') or getattr(self.instance, 'estatisticas_visitante', None)
 
@@ -29,6 +30,9 @@ class PartidaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'estatisticas_mandante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
         elif (estatisticas_visitante and not estatisticas_mandante):
             raise serializers.ValidationError({'estatisticas_visitante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
+        
+        if status != 'F' and estatisticas_mandante:
+            raise serializers.ValidationError({'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'})
         
         return data
 
