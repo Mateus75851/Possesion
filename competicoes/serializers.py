@@ -35,6 +35,10 @@ class PartidaSerializer(serializers.ModelSerializer):
         if status != 'F' and estatisticas_mandante:
             raise serializers.ValidationError({'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'})
         
+        if estatisticas_mandante:
+            if estatisticas_mandante.porcentagem_posse_de_bola + estatisticas_visitante.porcentagem_posse_de_bola != 100:
+                raise serializers.ValidationError({'estatisticas_mandante': 'As porcentagens de posse de bola do mandante e do visitante precisam somar 100'})
+        
         return data
 
 
@@ -96,6 +100,15 @@ class EstatisticaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estatistica
         fields = '__all__'
+    
+    def validate(self, data):
+        chutes = data.get('chutes') or getattr(self.instance, 'chutes', 0)
+        chutes_a_gol = data.get('chutes_a_gol') or getattr(self.instance, 'chutes_a_gol', 0)
+
+        if chutes_a_gol > chutes:
+            raise serializers.ValidationError({'chutes_a_gol': 'Não pode haver mais chutes a gol do que chutes totais'})
+        
+        return data
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
