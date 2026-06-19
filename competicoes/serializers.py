@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from .models import Campeonato, Clube, Participacao, Partida, Estatistica
 
@@ -42,43 +43,44 @@ class PartidaSerializer(serializers.ModelSerializer):
         estatisticas_visitante = validated_data.get('estatisticas_visitante') or instance.estatisticas_visitante
 
         if estatisticas_mandante: # se temos as estatisticas do mandante(lembrando que, se tem do mandante, tem do visitante)
-            participacao_mandante = instance.mandante
-            participacao_visitante = instance.visitante
-            
-            # contamos os gols que cada um fez e sofreu
-            participacao_mandante.gols_feitos += estatisticas_mandante.gols
-            participacao_mandante.gols_sofridos += estatisticas_visitante.gols
+            with transaction.atomic():
+                participacao_mandante = instance.mandante
+                participacao_visitante = instance.visitante
+                
+                # contamos os gols que cada um fez e sofreu
+                participacao_mandante.gols_feitos += estatisticas_mandante.gols
+                participacao_mandante.gols_sofridos += estatisticas_visitante.gols
 
-            participacao_visitante.gols_feitos += estatisticas_visitante.gols
-            participacao_visitante.gols_sofridos += estatisticas_mandante.gols
+                participacao_visitante.gols_feitos += estatisticas_visitante.gols
+                participacao_visitante.gols_sofridos += estatisticas_mandante.gols
 
-            # contamos os cartoes amarelos e vermelhos que cada um levou
-            participacao_mandante.cartoes_amarelos += estatisticas_mandante.cartoes_amarelos
-            participacao_mandante.cartoes_vermelhos += estatisticas_mandante.cartoes_vermelhos
+                # contamos os cartoes amarelos e vermelhos que cada um levou
+                participacao_mandante.cartoes_amarelos += estatisticas_mandante.cartoes_amarelos
+                participacao_mandante.cartoes_vermelhos += estatisticas_mandante.cartoes_vermelhos
 
-            participacao_visitante.cartoes_amarelos += estatisticas_visitante.cartoes_amarelos
-            participacao_visitante.cartoes_vermelhos += estatisticas_visitante.cartoes_vermelhos
+                participacao_visitante.cartoes_amarelos += estatisticas_visitante.cartoes_amarelos
+                participacao_visitante.cartoes_vermelhos += estatisticas_visitante.cartoes_vermelhos
 
-            # analisamos quem venceu ou se deu empate
-            if estatisticas_mandante.gols > estatisticas_visitante.gols:
-                participacao_mandante.vitorias += 1
-                participacao_visitante.derrotas += 1
+                # analisamos quem venceu ou se deu empate
+                if estatisticas_mandante.gols > estatisticas_visitante.gols:
+                    participacao_mandante.vitorias += 1
+                    participacao_visitante.derrotas += 1
 
-                participacao_mandante.pontos += 3
-            elif estatisticas_mandante.gols == estatisticas_visitante.gols:
-                participacao_mandante.empates += 1
-                participacao_visitante.empates += 1
+                    participacao_mandante.pontos += 3
+                elif estatisticas_mandante.gols == estatisticas_visitante.gols:
+                    participacao_mandante.empates += 1
+                    participacao_visitante.empates += 1
 
-                participacao_mandante.pontos += 1
-                participacao_visitante.pontos += 1
-            else:
-                participacao_mandante.derrotas += 1
-                participacao_visitante.vitorias += 1
+                    participacao_mandante.pontos += 1
+                    participacao_visitante.pontos += 1
+                else:
+                    participacao_mandante.derrotas += 1
+                    participacao_visitante.vitorias += 1
 
-                participacao_visitante.pontos += 3
-            
-            participacao_mandante.save()
-            participacao_visitante.save()
+                    participacao_visitante.pontos += 3
+                
+                participacao_mandante.save()
+                participacao_visitante.save()
             
 
         return super().update(instance, validated_data)
