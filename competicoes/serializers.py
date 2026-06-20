@@ -124,7 +124,7 @@ class AtletaSerializer(serializers.ModelSerializer):
         model = Atleta
         fields = '__all__'
 
-class EscalacaoaSerializer(serializers.ModelSerializer):
+class EscalacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Escalacao
         fields = '__all__'
