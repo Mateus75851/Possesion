@@ -3,7 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao, EscalacaoSlot
-from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer, EscalacaoaSerializer, EscalacaoSlotSerializer
+from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer, EscalacaoSerializer, EscalacaoSlotSerializer
 from .services import funcao_gerar_tabela
 
 class CampeonatoViewSet(viewsets.ModelViewSet):
