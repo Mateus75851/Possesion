@@ -55,8 +55,11 @@ class Escalacao(models.Model):
     clube = models.ForeignKey(Clube, on_delete=models.CASCADE)
     partida = models.ForeignKey('Partida', on_delete=models.CASCADE)
 
-class EscalacaoSlot(models.Model):
-    class PosicaoAssumidaEscalacaoSlot(models.TextChoices):
+    def __str__(self):
+        return f'{self.clube.nome} (partida {self.partida.__str__()})'
+
+class EscalacaoSpace(models.Model):
+    class PosicaoAssumidaEscalacaoSpace(models.TextChoices):
         GK = "GK", "Goleiro"
         CB = "CB", "Zagueiro Central"
         LB = "LB", "Lateral Esquerdo"
@@ -77,7 +80,7 @@ class EscalacaoSlot(models.Model):
     atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE)
 
     numero_camisa = models.PositiveIntegerField()
-    posicao_assumida = models.CharField(max_length=20, choices=PosicaoAssumidaEscalacaoSlot.choices)
+    posicao_assumida = models.CharField(max_length=20, choices=PosicaoAssumidaEscalacaoSpace.choices)
 
 class Estatistica(models.Model):
     gols = models.IntegerField(null=True,blank=True)
@@ -107,8 +110,8 @@ class Partida(models.Model):
     estatisticas_mandante = models.OneToOneField(Estatistica, on_delete=models.SET_NULL, null=True, blank=True, related_name='partida_como_estatisticas_mandante')
     estatisticas_visitante = models.OneToOneField(Estatistica, on_delete=models.SET_NULL, null=True, blank=True, related_name='partida_como_estatisticas_visitante')
 
-    # escalacao_mandante = 
-    # escalacao_visitante =
+    escalacao_mandante = models.OneToOneField(Escalacao, on_delete=models.SET_NULL, null=True, blank=True, related_name='partida_como_escalacao_mandante')
+    escalacao_visitante = models.OneToOneField(Escalacao, on_delete=models.SET_NULL, null=True, blank=True, related_name='partida_como_escalacao_visitante')
 
     def __str__(self):
         return f'{self.mandante.clube.nome} x {self.visitante.clube.nome}'
@@ -149,3 +152,6 @@ class Atleta(models.Model):
 
     clube = models.ForeignKey(Clube, on_delete=models.SET_NULL, null=True, blank=True, related_name='elenco')
     posicao_principal = models.CharField(max_length=20, choices=PosicaoPrincipalAtleta.choices)
+
+    def __str__(self):
+        return f'{self.nome} | {self.clube}'

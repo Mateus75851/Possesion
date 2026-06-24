@@ -2,7 +2,7 @@ from django.db.models import F
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao, EscalacaoSlot
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSpace
 from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer, EscalacaoSerializer, EscalacaoSlotSerializer
 from .services import funcao_gerar_tabela
 
@@ -52,6 +52,39 @@ class PartidaViewSet(viewsets.ModelViewSet):
     queryset = Partida.objects.all()
     serializer_class = PartidaSerializer
 
+    @action(detail=True, methods=['get'])
+    def mostrar_estatisticas(self, request, pk=None):
+        partida = self.get_object()
+        nome_mandante = partida.mandante.clube.nome
+        nome_visitante = partida.visitante.clube.nome
+
+        estatisticas_mandante = EstatisticaSerializer(partida.estatisticas_mandante).data
+        estatisticas_visitante = EstatisticaSerializer(partida.estatisticas_visitante).data
+
+        return Response({
+            nome_mandante: estatisticas_mandante,
+            nome_visitante: estatisticas_visitante,
+        })
+    
+    @action(detail=True, methods=['get'])
+    def mostrar_escalacoes(self, request, pk=None):
+        partida = self.get_object()
+        nome_mandante = partida.mandante.clube.nome
+        nome_visitante = partida.visitante.clube.nome
+
+        queryset_escalacao_mandante = EscalacaoSpace.objects.filter(escalacao=partida.escalacao_mandante)
+        queryset_escalacao_visitante = EscalacaoSpace.objects.filter(escalacao=partida.escalacao_visitante)
+
+        dicionario_escalacao_mandante = EscalacaoSlotSerializer(queryset_escalacao_mandante, many=True).data
+        dicionario_escalacao_visitante = EscalacaoSlotSerializer(queryset_escalacao_visitante, many=True).data
+
+
+
+        return Response({
+            nome_mandante: dicionario_escalacao_mandante,
+            nome_visitante: dicionario_escalacao_visitante,
+        })
+
 class EstatisticaViewSet(viewsets.ModelViewSet):
     queryset = Estatistica.objects.all()
     serializer_class = EstatisticaSerializer
@@ -65,5 +98,5 @@ class EscalacaoViewSet(viewsets.ModelViewSet):
     serializer_class = EscalacaoSerializer
 
 class EscalacaoSlotViewSet(viewsets.ModelViewSet):
-    queryset = EscalacaoSlot.objects.all()
+    queryset = EscalacaoSpace.objects.all()
     serializer_class = EscalacaoSlotSerializer

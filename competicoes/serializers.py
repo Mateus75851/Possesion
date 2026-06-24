@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao, EscalacaoSlot
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSpace
 
 class CampeonatoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,6 +21,12 @@ class PartidaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Partida
         fields = '__all__'
+        extra_kwargs = {
+            'estatisticas_mandante': {'write_only': True},
+            'estatisticas_visitante': {'write_only': True},
+            'escalacao_mandante': {'write_only': True},
+            'escalacao_visitante': {'write_only': True},
+        }
     
     def validate(self, data):
         rodada = data.get('rodada') or getattr(self.instance, 'rodada', None)
@@ -103,6 +109,8 @@ class PartidaSerializer(serializers.ModelSerializer):
         representacao['campeonato'] = instance.campeonato.__str__()
         representacao['mandante'] = instance.mandante.clube.nome
         representacao['visitante'] = instance.visitante.clube.nome
+        representacao['escalacao_mandante'] = instance.escalacao_mandante.__str__()
+        representacao['escalacao_visitante'] = instance.escalacao_visitante.__str__()
         return representacao
 
 class EstatisticaSerializer(serializers.ModelSerializer):
@@ -128,11 +136,22 @@ class EscalacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Escalacao
         fields = '__all__'
-
+    
+    def to_representation(self, instance):
+        representacao = super().to_representation(instance)
+        representacao['clube'] = instance.clube.nome
+        representacao['partida'] = instance.partida.__str__()
+        return representacao
+    
 class EscalacaoSlotSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EscalacaoSlot
+        model = EscalacaoSpace
         fields = '__all__'
+    
+    def to_representation(self, instance):
+        representacao = super().to_representation(instance)
+        representacao['atleta'] = instance.atleta.nome
+        return representacao
 
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
