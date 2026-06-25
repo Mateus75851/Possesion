@@ -117,18 +117,14 @@ class PartidaSerializer(serializers.ModelSerializer):
                     participacao_mandante.vitorias += 1
                     participacao_visitante.derrotas += 1
 
-                    participacao_mandante.pontos += 3
                 elif estatisticas_mandante.gols == estatisticas_visitante.gols:
                     participacao_mandante.empates += 1
                     participacao_visitante.empates += 1
 
-                    participacao_mandante.pontos += 1
-                    participacao_visitante.pontos += 1
                 else:
                     participacao_mandante.derrotas += 1
                     participacao_visitante.vitorias += 1
 
-                    participacao_visitante.pontos += 3
                 
                 participacao_mandante.save()
                 participacao_visitante.save()
