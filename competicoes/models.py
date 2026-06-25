@@ -37,6 +37,7 @@ class Participacao(models.Model):
     clube = models.ForeignKey(Clube, on_delete=models.CASCADE, related_name='participacoes')
 
     pontos = models.PositiveIntegerField(default=0)
+    partidas = models.PositiveIntegerField(default=0)
     vitorias = models.PositiveIntegerField(default=0)
     empates = models.PositiveIntegerField(default=0)
     derrotas = models.PositiveIntegerField(default=0)
