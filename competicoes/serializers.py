@@ -48,6 +48,18 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
         saldo_de_gols = gols_feitos - gols_sofridos
 
         return saldo_de_gols
+    
+    def validate(self, data):
+        if self.instance:
+            vitorias = data.get('vitorias', self.instance.vitorias)
+            gols_feitos = data.get('gols_feitos', self.instance.gols_feitos)
+        else:
+            vitorias = data.get('vitorias')
+            gols_feitos = data.get('gols_feitos')
+
+
+
+        return data
 
 class PartidaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,10 +73,16 @@ class PartidaSerializer(serializers.ModelSerializer):
         }
     
     def validate(self, data):
-        rodada = data.get('rodada') or getattr(self.instance, 'rodada', None)
-        status = data.get('status') or getattr(self.instance, 'status', None)
-        estatisticas_mandante = data.get('estatisticas_mandante') or getattr(self.instance, 'estatisticas_mandante', None)
-        estatisticas_visitante = data.get('estatisticas_visitante') or getattr(self.instance, 'estatisticas_visitante', None)
+        if self.instance:
+            rodada = data.get('rodada', self.instance.rodada)
+            status = data.get('status', self.instance.status)
+            estatisticas_mandante = data.get('estatisticas_mandante', self.instance.estatisticas_mandante)
+            estatisticas_visitante = data.get('estatisticas_visitante', self.instance.estatisticas_visitante)
+        else:
+            rodada = data.get('rodada')
+            status = data.get('status')
+            estatisticas_mandante = data.get('estatisticas_mandante')
+            estatisticas_visitante = data.get('estatisticas_visitante')
 
         if status == 'F':
             # vai pegando rodada a rodada ANTES da rodada da partida, com o intuito de confirmar se não ficou nenhum jogo pendente no caminho. Dessa forma, o cliente só vai poder finalizar algum jogo na rodada 8 se todos os jogos da rodada 1 a 7 tiverem sido finalizados(ou adiados), por exemplo, impedindo o cliente de pular rodadas.
@@ -147,8 +165,12 @@ class EstatisticaSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
     def validate(self, data):
-        chutes = data.get('chutes') or getattr(self.instance, 'chutes', 0)
-        chutes_a_gol = data.get('chutes_a_gol') or getattr(self.instance, 'chutes_a_gol', 0)
+        if self.instance:
+            chutes = data.get('chutes', self.instance.chutes)
+            chutes_a_gol = data.get('chutes_a_gol', self.instance.chutes_a_gol)
+        else:
+            chutes = data.get('chutes')
+            chutes_a_gol = data.get('chutes_a_gol')
 
         if chutes_a_gol > chutes:
             raise serializers.ValidationError({'chutes_a_gol': 'Não pode haver mais chutes a gol do que chutes totais'})
