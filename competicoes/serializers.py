@@ -57,7 +57,8 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
             vitorias = data.get('vitorias')
             gols_feitos = data.get('gols_feitos')
 
-
+        if vitorias > gols_feitos:
+            raise serializers.ValidationError({'vitorias': 'É matematicamente impossível se ter mais vitórias do que gols feitos'})
 
         return data
 
