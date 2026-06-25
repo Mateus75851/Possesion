@@ -157,6 +157,14 @@ class GolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gol
         fields = '__all__'
+    
+    def to_representation(self, instance):
+        representacao = super().to_representation(instance)
+        representacao['clube'] = instance.clube.nome
+        representacao['partida'] = instance.partida.__str__()
+        representacao['atleta'] = instance.atleta.nome
+
+        return representacao
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
