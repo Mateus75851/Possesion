@@ -75,14 +75,40 @@ class PartidaViewSet(viewsets.ModelViewSet):
         queryset_escalacao_mandante = EscalacaoSpace.objects.filter(escalacao=partida.escalacao_mandante)
         queryset_escalacao_visitante = EscalacaoSpace.objects.filter(escalacao=partida.escalacao_visitante)
 
-        dicionario_escalacao_mandante = EscalacaoSlotSerializer(queryset_escalacao_mandante, many=True).data
-        dicionario_escalacao_visitante = EscalacaoSlotSerializer(queryset_escalacao_visitante, many=True).data
+        lista_dicionarios_escalacao_mandante = EscalacaoSlotSerializer(queryset_escalacao_mandante, many=True).data
+        lista_dicionarios_escalacao_visitante = EscalacaoSlotSerializer(queryset_escalacao_visitante, many=True).data
 
 
 
         return Response({
-            nome_mandante: dicionario_escalacao_mandante,
-            nome_visitante: dicionario_escalacao_visitante,
+            nome_mandante: lista_dicionarios_escalacao_mandante,
+            nome_visitante: lista_dicionarios_escalacao_visitante,
+        })
+    
+    @action(detail=True, methods=['get'])
+    def placar(self, request, pk=None):
+        partida = self.get_object()
+
+        clube_mandante = partida.mandante.clube
+        clube_visitante = partida.visitante.clube
+
+        nome_mandante = clube_mandante.nome
+        nome_visitante = clube_visitante.nome
+
+        queryset_gols_mandante = Gol.objects.filter(partida=partida, clube=clube_mandante)
+        queryset_gols_visitante = Gol.objects.filter(partida=partida, clube=clube_visitante)
+
+        lista_dicionarios_gols_mandante = GolSerializer(queryset_gols_mandante, many=True).data
+        lista_dicionarios_gols_visitante = GolSerializer(queryset_gols_visitante, many=True).data
+
+        quantidade_gols_mandante = partida.estatisticas_mandante.gols
+        quantidade_gols_visitante = partida.estatisticas_visitante.gols
+
+        return Response({
+            nome_mandante: quantidade_gols_mandante,
+            nome_visitante: quantidade_gols_visitante,
+            'gols_mandante': lista_dicionarios_gols_mandante,
+            'gols_visitante': lista_dicionarios_gols_visitante,
         })
 
 class EstatisticaViewSet(viewsets.ModelViewSet):
