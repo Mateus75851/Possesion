@@ -14,6 +14,8 @@ class ClubeSerializer(serializers.ModelSerializer):
 
 class ParticipacaoSerializer(serializers.ModelSerializer):
     pontos = serializers.SerializerMethodField()
+    partidas = serializers.SerializerMethodField()
+
     class Meta:
         model = Participacao
         fields = '__all__'
@@ -26,8 +28,17 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
         pontos_de_empate = empates
 
         pontos = pontos_de_vitorias + pontos_de_empate
-        
+
         return pontos
+    
+    def get_partidas(self, obj):
+        vitorias = obj.vitorias
+        empates = obj.empates
+        derrotas = obj.derrotas
+
+        partidas = vitorias + empates + derrotas
+        
+        return partidas
 
 class PartidaSerializer(serializers.ModelSerializer):
     class Meta:
