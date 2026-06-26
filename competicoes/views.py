@@ -2,7 +2,7 @@ from django.db.models import F
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSpace, Gol
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSlot, Gol
 from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer, EscalacaoSerializer, EscalacaoSlotSerializer, GolSerializer
 from .services import funcao_gerar_tabela
 
@@ -71,8 +71,8 @@ class PartidaViewSet(viewsets.ModelViewSet):
         nome_mandante = partida.mandante.clube.nome
         nome_visitante = partida.visitante.clube.nome
 
-        queryset_escalacao_mandante = EscalacaoSpace.objects.filter(escalacao=partida.escalacao_mandante)
-        queryset_escalacao_visitante = EscalacaoSpace.objects.filter(escalacao=partida.escalacao_visitante)
+        queryset_escalacao_mandante = EscalacaoSlot.objects.filter(escalacao=partida.escalacao_mandante)
+        queryset_escalacao_visitante = EscalacaoSlot.objects.filter(escalacao=partida.escalacao_visitante)
 
         lista_dicionarios_escalacao_mandante = EscalacaoSlotSerializer(queryset_escalacao_mandante, many=True).data
         lista_dicionarios_escalacao_visitante = EscalacaoSlotSerializer(queryset_escalacao_visitante, many=True).data
@@ -123,7 +123,7 @@ class EscalacaoViewSet(viewsets.ModelViewSet):
     serializer_class = EscalacaoSerializer
 
 class EscalacaoSlotViewSet(viewsets.ModelViewSet):
-    queryset = EscalacaoSpace.objects.all()
+    queryset = EscalacaoSlot.objects.all()
     serializer_class = EscalacaoSlotSerializer
 
 class GolViewSet(viewsets.ModelViewSet):

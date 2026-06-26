@@ -57,7 +57,7 @@ class Escalacao(models.Model):
     def __str__(self):
         return f'{self.clube.nome} (partida {self.partida.__str__()})'
 
-class EscalacaoSpace(models.Model):
+class EscalacaoSlot(models.Model):
     class PosicaoAssumidaEscalacaoSpace(models.TextChoices):
         GK = "GK", "Goleiro"
         CB = "CB", "Zagueiro Central"

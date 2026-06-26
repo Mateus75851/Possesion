@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSpace, Gol
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSlot, Gol
 
 class CampeonatoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,11 +86,18 @@ class PartidaSerializer(serializers.ModelSerializer):
             status = data.get('status', self.instance.status)
             estatisticas_mandante = data.get('estatisticas_mandante', self.instance.estatisticas_mandante)
             estatisticas_visitante = data.get('estatisticas_visitante', self.instance.estatisticas_visitante)
+            mandante = data.get('mandante', self.instance.mandante)
+            visitante = data.get('visitante', self.instance.visitante)
         else:
             rodada = data.get('rodada')
             status = data.get('status')
             estatisticas_mandante = data.get('estatisticas_mandante')
             estatisticas_visitante = data.get('estatisticas_visitante')
+            mandante = data.get('mandante')
+            visitante = data.get('visitante')
+
+        if mandante == visitante:
+            raise serializers.ValidationError({'mandante': 'Um clube não pode jogar contra ele mesmo'})
 
         if status == 'F':
             # vai pegando rodada a rodada ANTES da rodada da partida, com o intuito de confirmar se não ficou nenhum jogo pendente no caminho. Dessa forma, o cliente só vai poder finalizar algum jogo na rodada 8 se todos os jogos da rodada 1 a 7 tiverem sido finalizados(ou adiados), por exemplo, impedindo o cliente de pular rodadas.
@@ -203,7 +210,7 @@ class EscalacaoSerializer(serializers.ModelSerializer):
     
 class EscalacaoSlotSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EscalacaoSpace
+        model = EscalacaoSlot
         fields = '__all__'
     
     def to_representation(self, instance):
