@@ -220,33 +220,33 @@ class EscalacaoSlotSerializer(serializers.ModelSerializer):
         return representacao
 
 class GolSerializer(serializers.ModelSerializer):
+    clube = serializers.SerializerMethodField()
+
     class Meta:
         model = Gol
         fields = '__all__'
     
+    def get_clube(self, obj):
+        clube = obj.atleta.clube
+        return clube
+
     def validate(self, data):
         # extração de dados
         if self.instance:
             minuto = data.get('minuto', self.instance.minuto)
-            clube = data.get('clube', self.instance.clube)
             partida = data.get('partida', self.instance.partida)
             atleta = data.get('atleta', self.instance.atleta)
 
         else:
             minuto = data.get('minuto')
-            clube = data.get('clube')
             partida = data.get('partida')
             atleta = data.get('atleta')
 
         if minuto > 115:
             raise serializers.ValidationError({'minuto': 'O gol não pode ter sido marcado depois do minuto 115'})
         
-        if clube != partida.mandante.clube and clube != partida.visitante.clube:
-            raise serializers.ValidationError({'clube': 'Esse clube não participa dessa partida'})
-        
-        if atleta.clube != clube:
-            raise serializers.ValidationError({'atleta': 'Esse atleta não joga nesse clube'})
-
+        if atleta.clube != partida.mandante.clube and atleta.clube != partida.visitante.clube:
+            raise serializers.ValidationError({'atleta': 'O clube a qual esse atleta é relacionado não participa dessa partida'})
 
         # Regra de negócio
 
@@ -254,7 +254,7 @@ class GolSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representacao = super().to_representation(instance)
-        representacao['clube'] = instance.clube.nome
+        representacao['clube'] = instance.atleta.clube.nome
         representacao['partida'] = instance.partida.__str__()
         representacao['atleta'] = instance.atleta.nome
 

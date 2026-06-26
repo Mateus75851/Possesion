@@ -82,7 +82,6 @@ class EscalacaoSlot(models.Model):
     posicao_assumida = models.CharField(max_length=20, choices=PosicaoAssumidaEscalacaoSpace.choices)
 
 class Gol(models.Model):
-    clube = models.ForeignKey(Clube, on_delete=models.CASCADE, related_name='gols')
     partida = models.ForeignKey('Partida', on_delete=models.CASCADE, related_name='gols')
 
     atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE, related_name='gols')
