@@ -224,6 +224,34 @@ class GolSerializer(serializers.ModelSerializer):
         model = Gol
         fields = '__all__'
     
+    def validate(self, data):
+        # extração de dados
+        if self.instance:
+            minuto = data.get('minuto', self.instance.minuto)
+            clube = data.get('clube', self.instance.clube)
+            partida = data.get('partida', self.instance.partida)
+            atleta = data.get('atleta', self.instance.atleta)
+
+        else:
+            minuto = data.get('minuto')
+            clube = data.get('clube')
+            partida = data.get('partida')
+            atleta = data.get('atleta')
+
+        if minuto > 115:
+            raise serializers.ValidationError({'minuto': 'O gol não pode ter sido marcado depois do minuto 115'})
+        
+        if clube != partida.mandante.clube and clube != partida.visitante.clube:
+            raise serializers.ValidationError({'clube': 'Esse clube não participa dessa partida'})
+        
+        if atleta.clube != clube:
+            raise serializers.ValidationError({'atleta': 'Esse atleta não joga nesse clube'})
+
+
+        # Regra de negócio
+
+        return data
+
     def to_representation(self, instance):
         representacao = super().to_representation(instance)
         representacao['clube'] = instance.clube.nome
