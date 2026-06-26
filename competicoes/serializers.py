@@ -226,6 +226,7 @@ class GolSerializer(serializers.ModelSerializer):
 
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
+    pontos = serializers.IntegerField()
     saldo_de_gols = serializers.IntegerField()
 
     class Meta:
