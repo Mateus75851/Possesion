@@ -19,7 +19,7 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Participacao
-        fields = ['id', 'pontos', 'partidas', 'vitorias', 'empates', 'derrotas', 'gols_feitos', 'gols_sofridos', 'saldo_de_gols', 'cartoes_amarelos', 'cartoes_vermelhos', 'campeonato', 'clube']
+        fields = ['id', 'campeonato', 'clube', 'pontos', 'partidas', 'vitorias', 'empates', 'derrotas', 'gols_feitos', 'gols_sofridos', 'saldo_de_gols', 'cartoes_amarelos', 'cartoes_vermelhos']
     
     def get_pontos(self, obj):
         vitorias = obj.vitorias
@@ -61,6 +61,13 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'vitorias': 'É matematicamente impossível se ter mais vitórias do que gols feitos'})
 
         return data
+    
+    def to_representation(self, instance):
+        representacao = super().to_representation(instance)
+        representacao['campeonato'] = instance.campeonato.__str__()
+        representacao['clube'] = instance.clube.nome
+        
+        return representacao
 
 class PartidaSerializer(serializers.ModelSerializer):
     class Meta:
