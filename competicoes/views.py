@@ -14,7 +14,8 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
     def classificacao(self, request, pk=None): # coloquei o None como padrão porque pode ter algum teste ou algo do tipo que eu queira usar sem passar o pk
         campeonato = self.get_object()
         queryset_classificacao = campeonato.participacoes.annotate(
-            saldo_de_gols=F('gols_feitos')-F('gols_sofridos')
+            pontos=F('vitorias')*3 + F('empates'),
+            saldo_de_gols=F('gols_feitos')-F('gols_sofridos'),
         ).order_by('-pontos', '-vitorias', '-saldo_de_gols', '-gols_feitos')
         dicionario_classificacao = ClassificacaoSerializer(queryset_classificacao, many=True).data 
 
@@ -44,9 +45,7 @@ class ClubeViewSet(viewsets.ModelViewSet):
     queryset = Clube.objects.all()
     serializer_class = ClubeSerializer
 
-class ParticipacaoViewSet(viewsets.ModelViewSet):
-    queryset = Participacao.objects.all()
-    serializer_class = ParticipacaoSerializer
+
 
 class PartidaViewSet(viewsets.ModelViewSet):
     queryset = Partida.objects.all()
