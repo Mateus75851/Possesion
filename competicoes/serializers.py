@@ -215,6 +215,7 @@ class EscalacaoSlotSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         representacao = super().to_representation(instance)
+        representacao['escalacao'] = instance.escalacao.__str__()
         representacao['atleta'] = instance.atleta.nome
         return representacao
 
