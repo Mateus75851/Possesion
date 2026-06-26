@@ -94,8 +94,8 @@ class PartidaViewSet(viewsets.ModelViewSet):
         nome_mandante = clube_mandante.nome
         nome_visitante = clube_visitante.nome
 
-        queryset_gols_mandante = Gol.objects.filter(partida=partida, clube=clube_mandante)
-        queryset_gols_visitante = Gol.objects.filter(partida=partida, clube=clube_visitante)
+        queryset_gols_mandante = Gol.objects.filter(partida=partida, atleta__clube=clube_mandante)
+        queryset_gols_visitante = Gol.objects.filter(partida=partida, atleta__clube=clube_visitante)
 
         lista_dicionarios_gols_mandante = GolSerializer(queryset_gols_mandante, many=True).data
         lista_dicionarios_gols_visitante = GolSerializer(queryset_gols_visitante, many=True).data
