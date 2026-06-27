@@ -69,35 +69,68 @@ class ParticipacaoSerializer(serializers.ModelSerializer):
         
         return representacao
 
+class EstatisticaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estatistica
+        fields = '__all__'
+    
+    def validate(self, data):
+        if self.instance:
+            chutes = data.get('chutes', self.instance.chutes)
+            chutes_a_gol = data.get('chutes_a_gol', self.instance.chutes_a_gol)
+        else:
+            chutes = data.get('chutes')
+            chutes_a_gol = data.get('chutes_a_gol')
+
+        if chutes_a_gol > chutes:
+            raise serializers.ValidationError({'chutes_a_gol': 'Não pode haver mais chutes a gol do que chutes totais'})
+        
+        return data
+
 class PartidaSerializer(serializers.ModelSerializer):
+    estatisticas_mandante = EstatisticaSerializer()
+    estatisticas_visitante = EstatisticaSerializer()
     class Meta:
         model = Partida
         fields = '__all__'
         extra_kwargs = {
-            'estatisticas_mandante': {'write_only': True},
-            'estatisticas_visitante': {'write_only': True},
             'escalacao_mandante': {'write_only': True},
             'escalacao_visitante': {'write_only': True},
         }
     
     def validate(self, data):
-        if self.instance:
-            rodada = data.get('rodada', self.instance.rodada)
-            status = data.get('status', self.instance.status)
-            estatisticas_mandante = data.get('estatisticas_mandante', self.instance.estatisticas_mandante)
-            estatisticas_visitante = data.get('estatisticas_visitante', self.instance.estatisticas_visitante)
-            mandante = data.get('mandante', self.instance.mandante)
-            visitante = data.get('visitante', self.instance.visitante)
-        else:
-            rodada = data.get('rodada')
-            status = data.get('status')
-            estatisticas_mandante = data.get('estatisticas_mandante')
-            estatisticas_visitante = data.get('estatisticas_visitante')
-            mandante = data.get('mandante')
-            visitante = data.get('visitante')
+        # extração dos dados
+
+        instance = self.instance
+        rodada = data.get('rodada', instance.rodada if instance else None)
+        status = data.get('status', instance.status if instance else None)
+        estatisticas_mandante = data.get('estatisticas_mandante', instance.estatisticas_mandante if instance else None)
+        estatisticas_visitante = data.get('estatisticas_visitante', instance.estatisticas_visitante if instance else None)
+        mandante = data.get('mandante', instance.mandante if instance else None)
+        visitante = data.get('visitante', instance.visitante if instance else None)
+
+
+        # Verificação de dados necessários
+
+        if (estatisticas_mandante and not estatisticas_visitante):
+            raise serializers.ValidationError({'estatisticas_mandante': 'Não se pode ter as estatísticas do mandante sem as do visitante'})
+        elif (estatisticas_visitante and not estatisticas_mandante):
+            raise serializers.ValidationError({'estatisticas_visitante': 'Não se pode ter as estatísticas do visitante sem as do mandante'})
+
+
+        # validações lógicas que não recorram ao banco
 
         if mandante == visitante:
             raise serializers.ValidationError({'mandante': 'Um clube não pode jogar contra ele mesmo'})
+
+        if status != 'F' and estatisticas_mandante:
+            raise serializers.ValidationError({'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'})
+
+        if estatisticas_mandante:
+            if estatisticas_mandante.get('porcentagem_posse_de_bola') + estatisticas_visitante.get('porcentagem_posse_de_bola') != 100:
+                raise serializers.ValidationError({'estatisticas_mandante': 'As porcentagens de posse de bola do mandante e do visitante precisam somar 100'})
+
+        # validações lógicas que recorram ao banco
 
         if status == 'F':
             # vai pegando rodada a rodada ANTES da rodada da partida, com o intuito de confirmar se não ficou nenhum jogo pendente no caminho. Dessa forma, o cliente só vai poder finalizar algum jogo na rodada 8 se todos os jogos da rodada 1 a 7 tiverem sido finalizados(ou adiados), por exemplo, impedindo o cliente de pular rodadas.
@@ -107,29 +140,69 @@ class PartidaSerializer(serializers.ModelSerializer):
                     if partida.status == 'P':
                         raise serializers.ValidationError({'rodada': f'A partida {partida.__str__()} ainda está pendente'})
 
-        if (estatisticas_mandante and not estatisticas_visitante):
-            raise serializers.ValidationError({'estatisticas_mandante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
-        elif (estatisticas_visitante and not estatisticas_mandante):
-            raise serializers.ValidationError({'estatisticas_visitante': 'As estatísticas do mandante e do visitante precisam ser adicionadas juntas!'})
-        
-        if status != 'F' and estatisticas_mandante:
-            raise serializers.ValidationError({'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'})
-        
-        if estatisticas_mandante:
-            if estatisticas_mandante.porcentagem_posse_de_bola + estatisticas_visitante.porcentagem_posse_de_bola != 100:
-                raise serializers.ValidationError({'estatisticas_mandante': 'As porcentagens de posse de bola do mandante e do visitante precisam somar 100'})
-        
         return data
 
 
     def update(self, instance, validated_data):
-        estatisticas_mandante = validated_data.get('estatisticas_mandante') or instance.estatisticas_mandante
-        estatisticas_visitante = validated_data.get('estatisticas_visitante') or instance.estatisticas_visitante
+        estatisticas_mandante = validated_data.get('estatisticas_mandante', instance.estatisticas_mandante)
+        estatisticas_visitante = validated_data.get('estatisticas_visitante', instance.estatisticas_visitante)
 
-        if estatisticas_mandante: # se temos as estatisticas do mandante(lembrando que, se tem do mandante, tem do visitante)
+        if validated_data.get('estatisticas_mandante') and validated_data.get('estatisticas_visitante'):
             with transaction.atomic():
                 participacao_mandante = instance.mandante
                 participacao_visitante = instance.visitante
+
+                estatisticas_mandante_antigas = instance.estatisticas_mandante
+                estatisticas_visitante_antigas = instance.estatisticas_visitante
+
+                if estatisticas_mandante_antigas and estatisticas_visitante_antigas:
+                    participacao_mandante.gols_feitos -= estatisticas_mandante_antigas.gols
+                    participacao_mandante.gols_sofridos -= estatisticas_visitante_antigas.gols 
+
+                    participacao_visitante.gols_feitos -= estatisticas_visitante_antigas.gols
+                    participacao_visitante.gols_sofridos -= estatisticas_mandante_antigas.gols
+
+                    participacao_mandante.cartoes_amarelos -= estatisticas_mandante_antigas.cartoes_amarelos
+                    participacao_mandante.cartoes_vermelhos -= estatisticas_mandante_antigas.cartoes_vermelhos
+
+                    participacao_visitante.cartoes_amarelos -= estatisticas_visitante_antigas.cartoes_amarelos
+                    participacao_visitante.cartoes_vermelhos -= estatisticas_visitante_antigas.cartoes_vermelhos
+
+                    if estatisticas_mandante_antigas.gols > estatisticas_visitante_antigas.gols:
+                        participacao_mandante.vitorias -= 1
+                        participacao_visitante.derrotas -= 1
+
+                    elif estatisticas_mandante_antigas.gols == estatisticas_visitante_antigas.gols:
+                        participacao_mandante.empates -= 1
+                        participacao_visitante.empates -= 1
+
+                    else:
+                        participacao_mandante.derrotas -= 1
+                        participacao_visitante.vitorias -= 1
+
+                if estatisticas_mandante_antigas and estatisticas_visitante_antigas: # lembrando que, se tem um tem outro, coloco ambos só pra ficar mais legível
+                    dados_a_alterar_estatisticas_mandante = {}
+                    for campo, valor in estatisticas_mandante.items():
+                        if getattr(estatisticas_mandante_antigas, campo) != valor:
+                            dados_a_alterar_estatisticas_mandante[campo] = valor
+
+                    dados_a_alterar_estatisticas_visitante = {}
+                    for campo, valor in estatisticas_visitante.items():
+                        if getattr(estatisticas_visitante_antigas, campo) != valor:
+                            dados_a_alterar_estatisticas_visitante[campo] = valor
+
+                    estatisticas_mandante = Estatistica.objects.get(pk=estatisticas_mandante_antigas.id).update(**dados_a_alterar_estatisticas_mandante)
+                    estatisticas_visitante = Estatistica.objects.get(pk=estatisticas_visitante_antigas.id).update(**dados_a_alterar_estatisticas_visitante)
+                else:
+                    estatisticas_mandante = Estatistica.objects.create(**estatisticas_mandante)
+                    estatisticas_visitante = Estatistica.objects.create(**estatisticas_visitante)
+
+                # muda os campos estatisticas_mandante e estatisticas_visitante da partida
+                instance.estatisticas_mandante = estatisticas_mandante
+                instance.estatisticas_visitante = estatisticas_visitante
+
+                instance.save()
+
                 
                 # contamos os gols que cada um fez e sofreu
                 participacao_mandante.gols_feitos += estatisticas_mandante.gols
@@ -161,7 +234,10 @@ class PartidaSerializer(serializers.ModelSerializer):
                 
                 participacao_mandante.save()
                 participacao_visitante.save()
-            
+
+                
+            validated_data.pop('estatisticas_mandante')
+            validated_data.pop('estatisticas_visitante')
 
         return super().update(instance, validated_data)
     
@@ -173,24 +249,6 @@ class PartidaSerializer(serializers.ModelSerializer):
         representacao['escalacao_mandante'] = instance.escalacao_mandante.__str__()
         representacao['escalacao_visitante'] = instance.escalacao_visitante.__str__()
         return representacao
-
-class EstatisticaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estatistica
-        fields = '__all__'
-    
-    def validate(self, data):
-        if self.instance:
-            chutes = data.get('chutes', self.instance.chutes)
-            chutes_a_gol = data.get('chutes_a_gol', self.instance.chutes_a_gol)
-        else:
-            chutes = data.get('chutes')
-            chutes_a_gol = data.get('chutes_a_gol')
-
-        if chutes_a_gol > chutes:
-            raise serializers.ValidationError({'chutes_a_gol': 'Não pode haver mais chutes a gol do que chutes totais'})
-        
-        return data
     
 class AtletaSerializer(serializers.ModelSerializer):
     class Meta:
