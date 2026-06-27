@@ -144,10 +144,11 @@ class PartidaSerializer(serializers.ModelSerializer):
 
 
     def update(self, instance, validated_data):
+        # extração dos dados
         estatisticas_mandante = validated_data.get('estatisticas_mandante', instance.estatisticas_mandante)
         estatisticas_visitante = validated_data.get('estatisticas_visitante', instance.estatisticas_visitante)
 
-        if validated_data.get('estatisticas_mandante') and validated_data.get('estatisticas_visitante'):
+        if validated_data.get('estatisticas_mandante') or validated_data.get('estatisticas_visitante'):
             with transaction.atomic():
                 participacao_mandante = instance.mandante
                 participacao_visitante = instance.visitante
@@ -180,24 +181,13 @@ class PartidaSerializer(serializers.ModelSerializer):
                         participacao_mandante.derrotas -= 1
                         participacao_visitante.vitorias -= 1
 
-                if estatisticas_mandante_antigas and estatisticas_visitante_antigas: # lembrando que, se tem um tem outro, coloco ambos só pra ficar mais legível
-                    dados_a_alterar_estatisticas_mandante = {}
-                    for campo, valor in estatisticas_mandante.items():
-                        if getattr(estatisticas_mandante_antigas, campo) != valor:
-                            dados_a_alterar_estatisticas_mandante[campo] = valor
 
-                    dados_a_alterar_estatisticas_visitante = {}
-                    for campo, valor in estatisticas_visitante.items():
-                        if getattr(estatisticas_visitante_antigas, campo) != valor:
-                            dados_a_alterar_estatisticas_visitante[campo] = valor
+                # mexe nas instâncias de ESTATISTICA
+                estatisticas_mandante, _ = Estatistica.objects.update_or_create(id=estatisticas_mandante_antigas.id if estatisticas_mandante_antigas else None, defaults=estatisticas_mandante)
 
-                    estatisticas_mandante = Estatistica.objects.get(pk=estatisticas_mandante_antigas.id).update(**dados_a_alterar_estatisticas_mandante)
-                    estatisticas_visitante = Estatistica.objects.get(pk=estatisticas_visitante_antigas.id).update(**dados_a_alterar_estatisticas_visitante)
-                else:
-                    estatisticas_mandante = Estatistica.objects.create(**estatisticas_mandante)
-                    estatisticas_visitante = Estatistica.objects.create(**estatisticas_visitante)
+                estatisticas_visitante, _ = Estatistica.objects.update_or_create(id=estatisticas_visitante_antigas.id if estatisticas_visitante_antigas else None, defaults=estatisticas_visitante)
 
-                # muda os campos estatisticas_mandante e estatisticas_visitante da partida
+                # muda os campos estatisticas_mandante e estatisticas_visitante da PARTIDA
                 instance.estatisticas_mandante = estatisticas_mandante
                 instance.estatisticas_visitante = estatisticas_visitante
 
