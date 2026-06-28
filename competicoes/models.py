@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 
 class Campeonato(models.Model):
@@ -49,6 +49,75 @@ class Participacao(models.Model):
     
     def __str__(self):
         return f'{self.clube.sigla} no {self.campeonato.nome}'
+    
+    def recalcular_totais(self):
+        with transaction.atomic():
+            vitorias_casa = Partida.objects.filter(
+                mandante=self,
+                status='F',
+                estatisticas_mandante__gols__gt=models.F('estatisticas_visitante__gols')
+            ).count()
+
+            vitorias_fora = Partida.objects.filter(
+                visitante=self,
+                status='F',
+                estatisticas_visitante__gols__gt=models.F('estatisticas_mandante__gols')
+            ).count()
+
+            self.vitorias = vitorias_casa + vitorias_fora
+
+
+            empates_casa = Partida.objects.filter(
+                mandante=self,
+                status='F',
+                estatisticas_mandante__gols=models.F('estatisticas_visitante__gols')
+            ).count()
+
+            empates_fora = Partida.objects.filter(
+                visitante=self,
+                status='F',
+                estatisticas_visitante__gols=models.F('estatisticas_mandante__gols')
+            ).count()
+
+            self.empates = empates_casa + empates_fora
+
+            
+            derrotas_casa = Partida.objects.filter(
+                mandante=self,
+                status='F',
+                estatisticas_mandante__gols__lt=models.F('estatisticas_visitante__gols')
+            ).count()
+
+            derrotas_fora = Partida.objects.filter(
+                visitante=self,
+                status='F',
+                estatisticas_visitante__gols__lt=models.F('estatisticas_mandante__gols')
+            ).count()
+
+            self.derrotas = derrotas_casa + derrotas_fora
+
+            dicionario_aggregate_mandante = Partida.objects.filter(mandante=self, status='F').aggregate(
+                gols_feitos=models.Sum('estatisticas_mandante__gols'),
+                gols_sofridos=models.Sum('estatisticas_visitante__gols'),
+                cartoes_amarelos=models.Sum('estatisticas_mandante__cartoes_amarelos'),
+                cartoes_vermelhos=models.Sum('estatisticas_mandante__cartoes_vermelhos')
+            )
+            
+            dicionario_aggregate_visitante = Partida.objects.filter(visitante=self, status='F').aggregate(
+                gols_feitos=models.Sum('estatisticas_visitante__gols'),
+                gols_sofridos=models.Sum('estatisticas_mandante__gols'),
+                cartoes_amarelos=models.Sum('estatisticas_visitante__cartoes_amarelos'),
+                cartoes_vermelhos=models.Sum('estatisticas_visitante__cartoes_vermelhos')
+            )
+
+            self.gols_feitos = (dicionario_aggregate_mandante['gols_feitos'] or 0) + (dicionario_aggregate_visitante['gols_feitos'] or 0)
+            self.gols_sofridos = (dicionario_aggregate_mandante['gols_sofridos'] or 0) + (dicionario_aggregate_visitante['gols_sofridos'] or 0)
+            self.cartoes_amarelos = (dicionario_aggregate_mandante['cartoes_amarelos'] or 0) + (dicionario_aggregate_visitante['cartoes_amarelos'] or 0)
+            self.cartoes_vermelhos = (dicionario_aggregate_mandante['cartoes_vermelhos'] or 0) + (dicionario_aggregate_visitante['cartoes_vermelhos'] or 0)
+
+            self.save()
+
+        return self
 
 class Escalacao(models.Model):
     clube = models.ForeignKey(Clube, on_delete=models.CASCADE)

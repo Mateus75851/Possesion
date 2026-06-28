@@ -147,41 +147,13 @@ class PartidaSerializer(serializers.ModelSerializer):
         # extração dos dados
         estatisticas_mandante = validated_data.get('estatisticas_mandante', instance.estatisticas_mandante)
         estatisticas_visitante = validated_data.get('estatisticas_visitante', instance.estatisticas_visitante)
+        estatisticas_mandante_antigas = instance.estatisticas_mandante
+        estatisticas_visitante_antigas = instance.estatisticas_visitante
+        mandante = validated_data.get('mandante', instance.mandante)
+        visitante = validated_data.get('visitante', instance.visitante)
 
         if validated_data.get('estatisticas_mandante') or validated_data.get('estatisticas_visitante'):
             with transaction.atomic():
-                participacao_mandante = instance.mandante
-                participacao_visitante = instance.visitante
-
-                estatisticas_mandante_antigas = instance.estatisticas_mandante
-                estatisticas_visitante_antigas = instance.estatisticas_visitante
-
-                if estatisticas_mandante_antigas and estatisticas_visitante_antigas:
-                    participacao_mandante.gols_feitos -= estatisticas_mandante_antigas.gols
-                    participacao_mandante.gols_sofridos -= estatisticas_visitante_antigas.gols 
-
-                    participacao_visitante.gols_feitos -= estatisticas_visitante_antigas.gols
-                    participacao_visitante.gols_sofridos -= estatisticas_mandante_antigas.gols
-
-                    participacao_mandante.cartoes_amarelos -= estatisticas_mandante_antigas.cartoes_amarelos
-                    participacao_mandante.cartoes_vermelhos -= estatisticas_mandante_antigas.cartoes_vermelhos
-
-                    participacao_visitante.cartoes_amarelos -= estatisticas_visitante_antigas.cartoes_amarelos
-                    participacao_visitante.cartoes_vermelhos -= estatisticas_visitante_antigas.cartoes_vermelhos
-
-                    if estatisticas_mandante_antigas.gols > estatisticas_visitante_antigas.gols:
-                        participacao_mandante.vitorias -= 1
-                        participacao_visitante.derrotas -= 1
-
-                    elif estatisticas_mandante_antigas.gols == estatisticas_visitante_antigas.gols:
-                        participacao_mandante.empates -= 1
-                        participacao_visitante.empates -= 1
-
-                    else:
-                        participacao_mandante.derrotas -= 1
-                        participacao_visitante.vitorias -= 1
-
-
                 # mexe nas instâncias de ESTATISTICA
                 estatisticas_mandante, _ = Estatistica.objects.update_or_create(id=estatisticas_mandante_antigas.id if estatisticas_mandante_antigas else None, defaults=estatisticas_mandante)
 
@@ -193,37 +165,10 @@ class PartidaSerializer(serializers.ModelSerializer):
 
                 instance.save()
 
+                # recalcula as participações
+                mandante.recalcular_totais()
+                visitante.recalcular_totais()
                 
-                # contamos os gols que cada um fez e sofreu
-                participacao_mandante.gols_feitos += estatisticas_mandante.gols
-                participacao_mandante.gols_sofridos += estatisticas_visitante.gols
-
-                participacao_visitante.gols_feitos += estatisticas_visitante.gols
-                participacao_visitante.gols_sofridos += estatisticas_mandante.gols
-
-                # contamos os cartoes amarelos e vermelhos que cada um levou
-                participacao_mandante.cartoes_amarelos += estatisticas_mandante.cartoes_amarelos
-                participacao_mandante.cartoes_vermelhos += estatisticas_mandante.cartoes_vermelhos
-
-                participacao_visitante.cartoes_amarelos += estatisticas_visitante.cartoes_amarelos
-                participacao_visitante.cartoes_vermelhos += estatisticas_visitante.cartoes_vermelhos
-
-                # analisamos quem venceu ou se deu empate
-                if estatisticas_mandante.gols > estatisticas_visitante.gols:
-                    participacao_mandante.vitorias += 1
-                    participacao_visitante.derrotas += 1
-
-                elif estatisticas_mandante.gols == estatisticas_visitante.gols:
-                    participacao_mandante.empates += 1
-                    participacao_visitante.empates += 1
-
-                else:
-                    participacao_mandante.derrotas += 1
-                    participacao_visitante.vitorias += 1
-
-                
-                participacao_mandante.save()
-                participacao_visitante.save()
 
                 
             validated_data.pop('estatisticas_mandante')
