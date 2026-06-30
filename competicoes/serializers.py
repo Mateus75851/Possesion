@@ -109,14 +109,12 @@ class PartidaSerializer(serializers.ModelSerializer):
         mandante = data.get('mandante', instance.mandante if instance else None)
         visitante = data.get('visitante', instance.visitante if instance else None)
 
-
         # Verificação de dados necessários
 
         if (estatisticas_mandante and not estatisticas_visitante):
             raise serializers.ValidationError({'estatisticas_mandante': 'Não se pode ter as estatísticas do mandante sem as do visitante'})
         elif (estatisticas_visitante and not estatisticas_mandante):
             raise serializers.ValidationError({'estatisticas_visitante': 'Não se pode ter as estatísticas do visitante sem as do mandante'})
-
 
         # validações lógicas que não recorram ao banco
 
@@ -127,7 +125,10 @@ class PartidaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'})
 
         if estatisticas_mandante:
-            if estatisticas_mandante.get('porcentagem_posse_de_bola') + estatisticas_visitante.get('porcentagem_posse_de_bola') != 100:
+            porcentagem_posse_de_bola_mandante = estatisticas_mandante.get('porcentagem_posse_de_bola') if type(estatisticas_mandante) == dict else estatisticas_mandante.porcentagem_posse_de_bola
+            porcentagem_posse_de_bola_visitante = estatisticas_visitante.get('porcentagem_posse_de_bola') if type(estatisticas_visitante) == dict else estatisticas_visitante.porcentagem_posse_de_bola
+
+            if porcentagem_posse_de_bola_mandante + porcentagem_posse_de_bola_visitante != 100:
                 raise serializers.ValidationError({'estatisticas_mandante': 'As porcentagens de posse de bola do mandante e do visitante precisam somar 100'})
 
         # validações lógicas que recorram ao banco
@@ -144,37 +145,43 @@ class PartidaSerializer(serializers.ModelSerializer):
 
 
     def update(self, instance, validated_data):
+        estatisticas_mandante_vieram = bool(validated_data.get('estatisticas_mandante'))
+        estatisticas_visitante_vieram = bool(validated_data.get('estatisticas_visitante'))
+
         # extração dos dados
-        estatisticas_mandante = validated_data.get('estatisticas_mandante', instance.estatisticas_mandante)
-        estatisticas_visitante = validated_data.get('estatisticas_visitante', instance.estatisticas_visitante)
+        estatisticas_mandante = validated_data.pop('estatisticas_mandante', instance.estatisticas_mandante)
+        estatisticas_visitante = validated_data.pop('estatisticas_visitante', instance.estatisticas_visitante)
         estatisticas_mandante_antigas = instance.estatisticas_mandante
         estatisticas_visitante_antigas = instance.estatisticas_visitante
         mandante = validated_data.get('mandante', instance.mandante)
         visitante = validated_data.get('visitante', instance.visitante)
 
-        if validated_data.get('estatisticas_mandante') or validated_data.get('estatisticas_visitante'):
+
+
+        partida_atualizada = super().update(instance, validated_data)
+
+        if estatisticas_mandante_vieram or estatisticas_visitante_vieram:
             with transaction.atomic():
+
+                estatisticas_mandante = estatisticas_mandante if type(estatisticas_mandante) == dict else EstatisticaSerializer(estatisticas_mandante).data
+                estatisticas_visitante = estatisticas_visitante if type(estatisticas_visitante) == dict else EstatisticaSerializer(estatisticas_visitante).data
+
                 # mexe nas instâncias de ESTATISTICA
                 estatisticas_mandante, _ = Estatistica.objects.update_or_create(id=estatisticas_mandante_antigas.id if estatisticas_mandante_antigas else None, defaults=estatisticas_mandante)
 
                 estatisticas_visitante, _ = Estatistica.objects.update_or_create(id=estatisticas_visitante_antigas.id if estatisticas_visitante_antigas else None, defaults=estatisticas_visitante)
 
                 # muda os campos estatisticas_mandante e estatisticas_visitante da PARTIDA
-                instance.estatisticas_mandante = estatisticas_mandante
-                instance.estatisticas_visitante = estatisticas_visitante
+                partida_atualizada.estatisticas_mandante = estatisticas_mandante
+                partida_atualizada.estatisticas_visitante = estatisticas_visitante
 
-                instance.save()
+                partida_atualizada.save()
 
                 # recalcula as participações
                 mandante.recalcular_totais()
                 visitante.recalcular_totais()
-                
 
-                
-            validated_data.pop('estatisticas_mandante')
-            validated_data.pop('estatisticas_visitante')
-
-        return super().update(instance, validated_data)
+        return partida_atualizada
     
     def to_representation(self, instance):
         representacao = super().to_representation(instance) # retorna um dicionário de primitivos
