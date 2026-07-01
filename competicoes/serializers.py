@@ -236,12 +236,10 @@ class GolSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if self.instance:
-            minuto = data.get('minuto', self.instance.minuto)
             partida = data.get('partida', self.instance.partida)
             atleta = data.get('atleta', self.instance.atleta)
 
         else:
-            minuto = data.get('minuto')
             partida = data.get('partida')
             atleta = data.get('atleta')
         
