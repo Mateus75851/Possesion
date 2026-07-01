@@ -116,14 +116,16 @@ class PartidaSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         # extração dos dados
-
         instance = self.instance
+
         rodada = data.get('rodada', instance.rodada if instance else None)
         status = data.get('status', instance.status if instance else None)
         estatisticas_mandante = data.get('estatisticas_mandante', instance.estatisticas_mandante if instance else None)
         estatisticas_visitante = data.get('estatisticas_visitante', instance.estatisticas_visitante if instance else None)
         mandante = data.get('mandante', instance.mandante if instance else None)
         visitante = data.get('visitante', instance.visitante if instance else None)
+        escalacao_mandante = data.get('escalacao_mandante', [{'numero_camisa': slot.numero_camisa, 'posicao_assumida': slot.posicao_assumida, 'partida': slot.partida, 'atleta': slot.atleta} for slot in instance.escalacao_slots.filter(atleta__clube=mandante.clube)] if instance else [])
+        escalacao_visitante = data.get('escalacao_visitante', [{'numero_camisa': slot.numero_camisa, 'posicao_assumida': slot.posicao_assumida, 'partida': slot.partida, 'atleta': slot.atleta} for slot in instance.escalacao_slots.filter(atleta__clube=visitante.clube)] if instance else [])
 
         # Verificação de dados necessários
 
@@ -146,6 +148,18 @@ class PartidaSerializer(serializers.ModelSerializer):
 
             if porcentagem_posse_de_bola_mandante + porcentagem_posse_de_bola_visitante != 100:
                 raise serializers.ValidationError({'estatisticas_mandante': 'As porcentagens de posse de bola do mandante e do visitante precisam somar 100'})
+
+        if escalacao_mandante:
+            atletas_invalidos_mandante = [escalacao_slot['atleta'].nome for escalacao_slot in escalacao_mandante if escalacao_slot['atleta'].clube != mandante.clube]
+
+            if atletas_invalidos_mandante:
+                raise serializers.ValidationError({'escalacao_mandante': f'Os seguintes atletas não pertencem ao clube mandante: {atletas_invalidos_mandante}'})
+            
+        if escalacao_visitante:
+            atletas_invalidos_visitante = [escalacao_slot['atleta'].nome for escalacao_slot in escalacao_visitante if escalacao_slot['atleta'].clube != visitante.clube]
+
+            if atletas_invalidos_visitante:
+                raise serializers.ValidationError({'escalacao_visitante': f'Os seguintes atletas não pertencem ao clube visitante: {atletas_invalidos_visitante}'})
 
         # validações lógicas que recorram ao banco
 
@@ -205,8 +219,8 @@ class PartidaSerializer(serializers.ModelSerializer):
         representacao['mandante'] = instance.mandante.clube.nome
         representacao['visitante'] = instance.visitante.clube.nome
 
-        escalacao_mandante_queryset = EscalacaoSlot.objects.filter(partida=instance, atleta__clube=instance.mandante.clube)
-        escalacao_visitante_queryset = EscalacaoSlot.objects.filter(partida=instance, atleta__clube=instance.visitante.clube) 
+        escalacao_mandante_queryset = instance.escalacao_slots.filter(atleta__clube=instance.mandante.clube)
+        escalacao_visitante_queryset = instance.escalacao_slots.filter(atleta__clube=instance.visitante.clube) 
 
         escalacao_mandante_lista_dicionarios = EscalacaoSlotSerializer(escalacao_mandante_queryset, many=True).data
         escalacao_visitante_lista_dicionarios = EscalacaoSlotSerializer(escalacao_visitante_queryset, many=True).data
