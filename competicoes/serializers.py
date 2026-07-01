@@ -224,6 +224,7 @@ class AtletaSerializer(serializers.ModelSerializer):
 
 class GolSerializer(serializers.ModelSerializer):
     clube = serializers.SerializerMethodField()
+    minuto = serializers.IntegerField(min_value=1, max_value=115)
 
     class Meta:
         model = Gol
@@ -232,12 +233,6 @@ class GolSerializer(serializers.ModelSerializer):
     def get_clube(self, obj):
         clube = obj.atleta.clube
         return clube
-
-    def validate_minuto(self, minuto):
-        if minuto > 115:
-            raise serializers.ValidationError({'minuto': 'O gol não pode ter sido marcado depois do minuto 115'})
-
-        return minuto
 
     def validate(self, data):
         if self.instance:
