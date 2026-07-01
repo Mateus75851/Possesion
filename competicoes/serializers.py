@@ -86,10 +86,30 @@ class EstatisticaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'chutes_a_gol': 'Não pode haver mais chutes a gol do que chutes totais'})
         
         return data
+    
+class EscalacaoSlotSerializer(serializers.ModelSerializer):
+    clube = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = EscalacaoSlot
+        fields = '__all__'
+    
+    def get_clube(self, obj):
+        clube = obj.atleta.clube.nome
+        return clube
+
+    def to_representation(self, instance):
+        representacao = super().to_representation(instance)
+        representacao['atleta'] = instance.atleta.nome
+        return representacao
 
 class PartidaSerializer(serializers.ModelSerializer):
     estatisticas_mandante = EstatisticaSerializer()
     estatisticas_visitante = EstatisticaSerializer()
+
+    escalacao_mandante = EscalacaoSlotSerializer(many=True, write_only=True)
+    escalacao_visitante = EscalacaoSlotSerializer(many=True, write_only=True)
+
+
     class Meta:
         model = Partida
         fields = '__all__'
@@ -184,22 +204,23 @@ class PartidaSerializer(serializers.ModelSerializer):
         representacao['campeonato'] = instance.campeonato.__str__()
         representacao['mandante'] = instance.mandante.clube.nome
         representacao['visitante'] = instance.visitante.clube.nome
+
+        escalacao_mandante_queryset = EscalacaoSlot.objects.filter(partida=instance, atleta__clube=instance.mandante.clube)
+        escalacao_visitante_queryset = EscalacaoSlot.objects.filter(partida=instance, atleta__clube=instance.visitante.clube) 
+
+        escalacao_mandante_lista_dicionarios = EscalacaoSlotSerializer(escalacao_mandante_queryset, many=True).data
+        escalacao_visitante_lista_dicionarios = EscalacaoSlotSerializer(escalacao_visitante_queryset, many=True).data
+
+        representacao['escalacao_mandante'] = escalacao_mandante_lista_dicionarios
+        representacao['escalacao_visitante'] = escalacao_visitante_lista_dicionarios
+
+
         return representacao
     
 class AtletaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Atleta
         fields = '__all__'
-    
-class EscalacaoSlotSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EscalacaoSlot
-        fields = '__all__'
-    
-    def to_representation(self, instance):
-        representacao = super().to_representation(instance)
-        representacao['atleta'] = instance.atleta.nome
-        return representacao
 
 class GolSerializer(serializers.ModelSerializer):
     clube = serializers.SerializerMethodField()
@@ -212,8 +233,13 @@ class GolSerializer(serializers.ModelSerializer):
         clube = obj.atleta.clube
         return clube
 
+    def validate_minuto(self, minuto):
+        if minuto > 115:
+            raise serializers.ValidationError({'minuto': 'O gol não pode ter sido marcado depois do minuto 115'})
+
+        return minuto
+
     def validate(self, data):
-        # extração de dados
         if self.instance:
             minuto = data.get('minuto', self.instance.minuto)
             partida = data.get('partida', self.instance.partida)
@@ -223,14 +249,9 @@ class GolSerializer(serializers.ModelSerializer):
             minuto = data.get('minuto')
             partida = data.get('partida')
             atleta = data.get('atleta')
-
-        if minuto > 115:
-            raise serializers.ValidationError({'minuto': 'O gol não pode ter sido marcado depois do minuto 115'})
         
         if atleta.clube != partida.mandante.clube and atleta.clube != partida.visitante.clube:
             raise serializers.ValidationError({'atleta': 'O clube a qual esse atleta é relacionado não participa dessa partida'})
-
-        # Regra de negócio
 
         return data
 
