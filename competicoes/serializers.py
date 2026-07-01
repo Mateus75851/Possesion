@@ -93,10 +93,6 @@ class PartidaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Partida
         fields = '__all__'
-        extra_kwargs = {
-            'escalacao_mandante': {'write_only': True},
-            'escalacao_visitante': {'write_only': True},
-        }
     
     def validate(self, data):
         # extração dos dados
@@ -188,8 +184,6 @@ class PartidaSerializer(serializers.ModelSerializer):
         representacao['campeonato'] = instance.campeonato.__str__()
         representacao['mandante'] = instance.mandante.clube.nome
         representacao['visitante'] = instance.visitante.clube.nome
-        representacao['escalacao_mandante'] = instance.escalacao_mandante.__str__()
-        representacao['escalacao_visitante'] = instance.escalacao_visitante.__str__()
         return representacao
     
 class AtletaSerializer(serializers.ModelSerializer):
@@ -204,7 +198,6 @@ class EscalacaoSlotSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         representacao = super().to_representation(instance)
-        representacao['escalacao'] = instance.escalacao.__str__()
         representacao['atleta'] = instance.atleta.nome
         return representacao
 
