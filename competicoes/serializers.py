@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, Escalacao , EscalacaoSlot, Gol
+from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, EscalacaoSlot, Gol
 
 class CampeonatoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -196,17 +196,6 @@ class AtletaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Atleta
         fields = '__all__'
-
-class EscalacaoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Escalacao
-        fields = '__all__'
-    
-    def to_representation(self, instance):
-        representacao = super().to_representation(instance)
-        representacao['clube'] = instance.clube.nome
-        representacao['partida'] = instance.partida.__str__()
-        return representacao
     
 class EscalacaoSlotSerializer(serializers.ModelSerializer):
     class Meta:
