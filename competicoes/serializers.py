@@ -124,8 +124,8 @@ class PartidaSerializer(serializers.ModelSerializer):
         estatisticas_visitante = data.get('estatisticas_visitante', instance.estatisticas_visitante if instance else None)
         mandante = data.get('mandante', instance.mandante if instance else None)
         visitante = data.get('visitante', instance.visitante if instance else None)
-        escalacao_mandante = data.get('escalacao_mandante', [{'numero_camisa': slot.numero_camisa, 'posicao_assumida': slot.posicao_assumida, 'partida': slot.partida, 'atleta': slot.atleta} for slot in instance.escalacao_slots.filter(atleta__clube=mandante.clube)] if instance else [])
-        escalacao_visitante = data.get('escalacao_visitante', [{'numero_camisa': slot.numero_camisa, 'posicao_assumida': slot.posicao_assumida, 'partida': slot.partida, 'atleta': slot.atleta} for slot in instance.escalacao_slots.filter(atleta__clube=visitante.clube)] if instance else [])
+        escalacao_mandante = data.get('escalacao_mandante', [{'posicao_assumida': slot.posicao_assumida, 'partida': slot.partida, 'atleta': slot.atleta} for slot in instance.escalacao_slots.filter(atleta__clube=mandante.clube)] if instance else [])
+        escalacao_visitante = data.get('escalacao_visitante', [{'posicao_assumida': slot.posicao_assumida, 'partida': slot.partida, 'atleta': slot.atleta} for slot in instance.escalacao_slots.filter(atleta__clube=visitante.clube)] if instance else [])
 
         # Verificação de dados necessários
 

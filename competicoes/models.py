@@ -140,7 +140,6 @@ class EscalacaoSlot(models.Model):
     partida = models.ForeignKey('Partida', on_delete=models.CASCADE, related_name='escalacao_slots')
     atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE)
 
-    numero_camisa = models.PositiveIntegerField()
     posicao_assumida = models.CharField(max_length=20, choices=PosicaoAssumidaEscalacaoSpace.choices)
 
 class Gol(models.Model):
@@ -215,6 +214,7 @@ class Atleta(models.Model):
     nacionalidade = models.CharField(max_length=40)
 
     clube = models.ForeignKey(Clube, on_delete=models.SET_NULL, null=True, blank=True, related_name='elenco')
+    numero_camisa = models.PositiveIntegerField()
     posicao_principal = models.CharField(max_length=20, choices=PosicaoPrincipalAtleta.choices)
 
     def __str__(self):
