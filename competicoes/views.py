@@ -10,16 +10,8 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
     queryset = Campeonato.objects.all()
     serializer_class = CampeonatoSerializer
 
-    @action(detail=True, methods=['get'])
-    def classificacao(self, request, pk=None): # coloquei o None como padrão porque pode ter algum teste ou algo do tipo que eu queira usar sem passar o pk
-        campeonato = self.get_object()
-        queryset_classificacao = campeonato.participacoes.annotate(
-            pontos=F('vitorias')*3 + F('empates'),
-            saldo_de_gols=F('gols_feitos')-F('gols_sofridos'),
-        ).order_by('-pontos', '-vitorias', '-saldo_de_gols', '-gols_feitos')
-        dicionario_classificacao = ClassificacaoSerializer(queryset_classificacao, many=True).data 
-
-        return Response(dicionario_classificacao)
+    '''@action(detail=True, methods=['post', 'get'])
+    def cadastrar'''
 
     @action(detail=True, methods=['post', 'get'])
     def gerar_tabela(self, request, pk=None):
@@ -40,6 +32,17 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
         except Exception:
             # Caso ocorra qualquer outro erro imprevisto
             return Response({"error": "Erro interno ao gerar a tabela."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def classificacao(self, request, pk=None): # coloquei o None como padrão porque pode ter algum teste ou algo do tipo que eu queira usar sem passar o pk
+        campeonato = self.get_object()
+        queryset_classificacao = campeonato.participacoes.annotate(
+            pontos=F('vitorias')*3 + F('empates'),
+            saldo_de_gols=F('gols_feitos')-F('gols_sofridos'),
+        ).order_by('-pontos', '-vitorias', '-saldo_de_gols', '-gols_feitos')
+        dicionario_classificacao = ClassificacaoSerializer(queryset_classificacao, many=True).data 
+
+        return Response(dicionario_classificacao)
         
 class ClubeViewSet(viewsets.ModelViewSet):
     queryset = Clube.objects.all()
