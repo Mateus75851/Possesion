@@ -14,7 +14,11 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
     def cadastrar_clubes(self, request, pk=None):
         campeonato = self.get_object()
 
-        serializer = self.get_serializer(data=request.data)
+        context = self.get_serializer_context()
+
+        context['campeonato'] = campeonato
+
+        serializer = self.get_serializer(data=request.data, context=context)
 
         serializer.is_valid(raise_exception=True)
 

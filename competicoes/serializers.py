@@ -273,6 +273,14 @@ class GolSerializer(serializers.ModelSerializer):
 class CadastroClubesSerializer(serializers.Serializer):
     clubes = serializers.PrimaryKeyRelatedField(queryset=Clube.objects.all(), many=True)
 
+    def validate(self, data):
+        quantidade_clubes_recebida = len(data.get('clubes'))
+        quantidade_clubes_necessaria = self.context['campeonato'].quantidade_equipes
+
+        if quantidade_clubes_recebida != quantidade_clubes_necessaria:
+            raise serializers.ValidationError({'clubes': f'{quantidade_clubes_necessaria} clubes são necessários, mas {quantidade_clubes_recebida} foram recebidos'})
+        return data
+
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
     pontos = serializers.IntegerField()
