@@ -270,6 +270,9 @@ class GolSerializer(serializers.ModelSerializer):
 
         return representacao
 
+class CadastroClubesSerializer(serializers.Serializer):
+    clubes = serializers.PrimaryKeyRelatedField(queryset=Clube.objects.all(), many=True)
+
 class ClassificacaoSerializer(serializers.ModelSerializer):
     clube = ClubeSerializer()
     pontos = serializers.IntegerField()

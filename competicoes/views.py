@@ -3,15 +3,40 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Campeonato, Clube, Participacao, Partida, Estatistica, Atleta, EscalacaoSlot, Gol
-from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer, EscalacaoSlotSerializer, GolSerializer
+from .serializers import CampeonatoSerializer, ClubeSerializer, ParticipacaoSerializer, PartidaSerializer, ClassificacaoSerializer, EstatisticaSerializer, AtletaSerializer, EscalacaoSlotSerializer, GolSerializer, CadastroClubesSerializer
 from .services import funcao_gerar_tabela
 
 class CampeonatoViewSet(viewsets.ModelViewSet):
     queryset = Campeonato.objects.all()
     serializer_class = CampeonatoSerializer
 
-    '''@action(detail=True, methods=['post', 'get'])
-    def cadastrar'''
+    @action(detail=True, methods=['post', 'get'], serializer_class=CadastroClubesSerializer)
+    def cadastrar_clubes(self, request, pk=None):
+        campeonato = self.get_object()
+
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        data_limpo = serializer.validated_data
+
+        try:
+            lista_participacoes = [Participacao(campeonato=campeonato, clube=clube) for _, lista in data_limpo.items() for clube in lista]
+
+            lista_participacoes_criadas = ParticipacaoSerializer(Participacao.objects.bulk_create(lista_participacoes), many=True).data
+
+            return Response({
+                "message": "Clubes cadastrados com sucesso!",
+                "participacoes_criadas": lista_participacoes_criadas, 
+            })
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception:
+            # Caso ocorra qualquer outro erro imprevisto
+            return Response({"error": "Erro interno ao gerar a tabela."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
     @action(detail=True, methods=['post', 'get'])
     def gerar_tabela(self, request, pk=None):
