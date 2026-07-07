@@ -1,0 +1,13 @@
+[tool.ruff]
+# Define o tamanho da linha (seguindo o padrão Black/PEP8)
+line-length = 88
+
+[tool.ruff.lint]
+# Seleciona o que o Ruff deve verificar
+# E = Erros de estilo/código (equivalente ao Flake8)
+# I = Importações (equivalente ao isort)
+select = ["E", "F", "I"]
+
+[tool.ruff.format]
+# O Ruff também pode formatar seu código no estilo "Black"
+quote-style = "double"

@@ -1,17 +1,30 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import CampeonatoViewSet, ClubeViewSet, PartidaViewSet, EstatisticaViewSet, AtletaViewSet, EscalacaoSlotViewSet, GolViewSet
+from django.urls import include, path
+from rest_framework_nested import routers
 
-router = DefaultRouter()
+from competicoes.views import (
+    AtletaViewSet,
+    CampeonatoViewSet,
+    ClubeViewSet,
+    EscalacaoSlotViewSet,
+    EstatisticaViewSet,
+    GolViewSet,
+    PartidaViewSet,
+)
 
-router.register('campeonatos', CampeonatoViewSet)
-router.register('clubes', ClubeViewSet)
-router.register('partidas', PartidaViewSet)
-router.register('estatisticas', EstatisticaViewSet)
-router.register('atletas', AtletaViewSet)
-router.register('escalacoesslots', EscalacaoSlotViewSet)
-router.register('gols', GolViewSet)
+router = routers.SimpleRouter()
+
+router.register("campeonatos", CampeonatoViewSet)
+
+campeonatos_router = routers.NestedSimpleRouter(router, "campeonatos", lookup="campeonato")
+campeonatos_router.register("partidas", PartidaViewSet, basename='campeonato-partidas')
+
+router.register("clubes", ClubeViewSet)
+router.register("estatisticas", EstatisticaViewSet)
+router.register("atletas", AtletaViewSet)
+router.register("escalacoesslots", EscalacaoSlotViewSet)
+router.register("gols", GolViewSet)
 
 urlpatterns = [
-    path('', include(router.urls))
-]
+    path("", include(router.urls)),
+    path("", include(campeonatos_router.urls)),
+    ]
