@@ -4,45 +4,45 @@ from django.db import models, transaction
 
 class Campeonato(models.Model):
     TIPO_CHOICES = [
-        ("e", "Estadual"),
-        ("r", "Regional"),
-        ("n", "Nacional"),
-        ("c", "Continental"),
-        ("m", "Mundial"),
+        ('e', 'Estadual'),
+        ('r', 'Regional'),
+        ('n', 'Nacional'),
+        ('c', 'Continental'),
+        ('m', 'Mundial'),
     ]
 
     nome = models.CharField(max_length=30)
-    logo = models.ImageField(upload_to="logos/campeonatos/")
+    logo = models.ImageField(upload_to='logos/campeonatos/')
     temporada = models.IntegerField()
     tipo = models.CharField(max_length=1, choices=TIPO_CHOICES)
     data_inicio = models.DateField()
     quantidade_equipes = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.nome} {self.temporada}"
+        return f'{self.nome} {self.temporada}'
 
 
 class Clube(models.Model):
     nome = models.CharField(max_length=50)
     sigla = models.CharField(max_length=3)
-    logo = models.ImageField(upload_to="logos/clubes/")
-    tecnico = models.CharField(max_length=50, default="Interino")
+    logo = models.ImageField(upload_to='logos/clubes/')
+    tecnico = models.CharField(max_length=50, default='Interino')
     fundacao = models.DateField()
     estadio = models.CharField(max_length=50, null=True, blank=True)
     campeonatos = models.ManyToManyField(
-        Campeonato, through="Participacao", related_name="clubes"
+        Campeonato, through='Participacao', related_name='clubes'
     )
 
     def __str__(self):
-        return f"{self.nome} ({self.sigla})"
+        return f'{self.nome} ({self.sigla})'
 
 
 class Participacao(models.Model):
     campeonato = models.ForeignKey(
-        Campeonato, on_delete=models.CASCADE, related_name="participacoes"
+        Campeonato, on_delete=models.CASCADE, related_name='participacoes'
     )
     clube = models.ForeignKey(
-        Clube, on_delete=models.CASCADE, related_name="participacoes"
+        Clube, on_delete=models.CASCADE, related_name='participacoes'
     )
 
     vitorias = models.PositiveIntegerField(default=0)
@@ -54,26 +54,26 @@ class Participacao(models.Model):
     cartoes_vermelhos = models.PositiveIntegerField(default=0)
 
     class Meta:
-        unique_together = ("campeonato", "clube")
+        unique_together = ('campeonato', 'clube')
 
     def __str__(self):
-        return f"{self.clube.sigla} no {self.campeonato.nome}"
+        return f'{self.clube.sigla} no {self.campeonato.nome}'
 
     def recalcular_totais(self):
         with transaction.atomic():
             vitorias_casa = Partida.objects.filter(
                 mandante=self,
-                status="F",
+                status='F',
                 estatisticas_mandante__gols__gt=models.F(
-                    "estatisticas_visitante__gols"
+                    'estatisticas_visitante__gols'
                 ),
             ).count()
 
             vitorias_fora = Partida.objects.filter(
                 visitante=self,
-                status="F",
+                status='F',
                 estatisticas_visitante__gols__gt=models.F(
-                    "estatisticas_mandante__gols"
+                    'estatisticas_mandante__gols'
                 ),
             ).count()
 
@@ -81,70 +81,70 @@ class Participacao(models.Model):
 
             empates_casa = Partida.objects.filter(
                 mandante=self,
-                status="F",
-                estatisticas_mandante__gols=models.F("estatisticas_visitante__gols"),
+                status='F',
+                estatisticas_mandante__gols=models.F('estatisticas_visitante__gols'),
             ).count()
 
             empates_fora = Partida.objects.filter(
                 visitante=self,
-                status="F",
-                estatisticas_visitante__gols=models.F("estatisticas_mandante__gols"),
+                status='F',
+                estatisticas_visitante__gols=models.F('estatisticas_mandante__gols'),
             ).count()
 
             self.empates = empates_casa + empates_fora
 
             derrotas_casa = Partida.objects.filter(
                 mandante=self,
-                status="F",
+                status='F',
                 estatisticas_mandante__gols__lt=models.F(
-                    "estatisticas_visitante__gols"
+                    'estatisticas_visitante__gols'
                 ),
             ).count()
 
             derrotas_fora = Partida.objects.filter(
                 visitante=self,
-                status="F",
+                status='F',
                 estatisticas_visitante__gols__lt=models.F(
-                    "estatisticas_mandante__gols"
+                    'estatisticas_mandante__gols'
                 ),
             ).count()
 
             self.derrotas = derrotas_casa + derrotas_fora
 
             dicionario_aggregate_mandante = Partida.objects.filter(
-                mandante=self, status="F"
+                mandante=self, status='F'
             ).aggregate(
-                gols_feitos=models.Sum("estatisticas_mandante__gols"),
-                gols_sofridos=models.Sum("estatisticas_visitante__gols"),
-                cartoes_amarelos=models.Sum("estatisticas_mandante__cartoes_amarelos"),
+                gols_feitos=models.Sum('estatisticas_mandante__gols'),
+                gols_sofridos=models.Sum('estatisticas_visitante__gols'),
+                cartoes_amarelos=models.Sum('estatisticas_mandante__cartoes_amarelos'),
                 cartoes_vermelhos=models.Sum(
-                    "estatisticas_mandante__cartoes_vermelhos"
+                    'estatisticas_mandante__cartoes_vermelhos'
                 ),
             )
 
             dicionario_aggregate_visitante = Partida.objects.filter(
-                visitante=self, status="F"
+                visitante=self, status='F'
             ).aggregate(
-                gols_feitos=models.Sum("estatisticas_visitante__gols"),
-                gols_sofridos=models.Sum("estatisticas_mandante__gols"),
-                cartoes_amarelos=models.Sum("estatisticas_visitante__cartoes_amarelos"),
+                gols_feitos=models.Sum('estatisticas_visitante__gols'),
+                gols_sofridos=models.Sum('estatisticas_mandante__gols'),
+                cartoes_amarelos=models.Sum('estatisticas_visitante__cartoes_amarelos'),
                 cartoes_vermelhos=models.Sum(
-                    "estatisticas_visitante__cartoes_vermelhos"
+                    'estatisticas_visitante__cartoes_vermelhos'
                 ),
             )
 
-            self.gols_feitos = (dicionario_aggregate_mandante["gols_feitos"] or 0) + (
-                dicionario_aggregate_visitante["gols_feitos"] or 0
+            self.gols_feitos = (dicionario_aggregate_mandante['gols_feitos'] or 0) + (
+                dicionario_aggregate_visitante['gols_feitos'] or 0
             )
             self.gols_sofridos = (
-                dicionario_aggregate_mandante["gols_sofridos"] or 0
-            ) + (dicionario_aggregate_visitante["gols_sofridos"] or 0)
+                dicionario_aggregate_mandante['gols_sofridos'] or 0
+            ) + (dicionario_aggregate_visitante['gols_sofridos'] or 0)
             self.cartoes_amarelos = (
-                dicionario_aggregate_mandante["cartoes_amarelos"] or 0
-            ) + (dicionario_aggregate_visitante["cartoes_amarelos"] or 0)
+                dicionario_aggregate_mandante['cartoes_amarelos'] or 0
+            ) + (dicionario_aggregate_visitante['cartoes_amarelos'] or 0)
             self.cartoes_vermelhos = (
-                dicionario_aggregate_mandante["cartoes_vermelhos"] or 0
-            ) + (dicionario_aggregate_visitante["cartoes_vermelhos"] or 0)
+                dicionario_aggregate_mandante['cartoes_vermelhos'] or 0
+            ) + (dicionario_aggregate_visitante['cartoes_vermelhos'] or 0)
 
             self.save()
 
@@ -153,26 +153,27 @@ class Participacao(models.Model):
 
 class EscalacaoSlot(models.Model):
     class PosicaoAssumidaEscalacaoSlot(models.TextChoices):
-        GK = "GK", "Goleiro"
-        CB = "CB", "Zagueiro Central"
-        LB = "LB", "Lateral Esquerdo"
-        RB = "RB", "Lateral Direito"
-        LWB = "LWB", "Lateral Ofensivo Esquerdo"
-        RWB = "RWB", "Lateral Ofensivo Direito"
-        DM = "DM", "Volante"
-        CM = "CM", "Meio Campo Central"
-        AM = "AM", "Meia Ofensivo"
-        LM = "LM", "Ala Esquerdo"
-        RM = "RM", "Ala Direito"
-        LW = "LW", "Ponta Esquerda"
-        RW = "RW", "Ponta Direita"
-        CF = "CF", "Centroavante"
-        ST = "ST", "Atacante"
+        GK = 'GK', 'Goleiro'
+        CB = 'CB', 'Zagueiro Central'
+        LB = 'LB', 'Lateral Esquerdo'
+        RB = 'RB', 'Lateral Direito'
+        LWB = 'LWB', 'Lateral Ofensivo Esquerdo'
+        RWB = 'RWB', 'Lateral Ofensivo Direito'
+        DM = 'DM', 'Volante'
+        CM = 'CM', 'Meio Campo Central'
+        AM = 'AM', 'Meia Ofensivo'
+        LM = 'LM', 'Ala Esquerdo'
+        RM = 'RM', 'Ala Direito'
+        LW = 'LW', 'Ponta Esquerda'
+        RW = 'RW', 'Ponta Direita'
+        CF = 'CF', 'Centroavante'
+        ST = 'ST', 'Atacante'
+
 
     partida = models.ForeignKey(
-        "Partida", on_delete=models.CASCADE, related_name="escalacao_slots"
+        'Partida', on_delete=models.CASCADE, related_name='escalacao_slots'
     )
-    atleta = models.ForeignKey("Atleta", on_delete=models.CASCADE)
+    atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE)
 
     posicao_assumida = models.CharField(
         max_length=20, choices=PosicaoAssumidaEscalacaoSlot.choices
@@ -180,10 +181,10 @@ class EscalacaoSlot(models.Model):
 
 class Gol(models.Model):
     partida = models.ForeignKey(
-        "Partida", on_delete=models.CASCADE, related_name="gols"
+        'Partida', on_delete=models.CASCADE, related_name='gols'
     )
 
-    atleta = models.ForeignKey("Atleta", on_delete=models.CASCADE, related_name="gols")
+    atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE, related_name='gols')
     minuto = models.PositiveIntegerField()
 
 
@@ -203,12 +204,12 @@ class Estatistica(models.Model):
 
 class Partida(models.Model):
     class StatusPartida(models.TextChoices):
-        PENDENTE = ("P", "Pendente")
-        FINALIZADA = ("F", "Finalizada")
-        ADIADA = ("A", "Adiada")
+        PENDENTE = ('P', 'Pendente')
+        FINALIZADA = ('F', 'Finalizada')
+        ADIADA = ('A', 'Adiada')
 
     campeonato = models.ForeignKey(
-        Campeonato, on_delete=models.CASCADE, related_name="partidas"
+        Campeonato, on_delete=models.CASCADE, related_name='partidas'
     )
     rodada = models.IntegerField()
     status = models.CharField(
@@ -216,10 +217,10 @@ class Partida(models.Model):
     )
 
     mandante = models.ForeignKey(
-        Participacao, on_delete=models.CASCADE, related_name="partidas_mandante"
+        Participacao, on_delete=models.CASCADE, related_name='partidas_mandante'
     )
     visitante = models.ForeignKey(
-        Participacao, on_delete=models.CASCADE, related_name="partidas_visitante"
+        Participacao, on_delete=models.CASCADE, related_name='partidas_visitante'
     )
 
     estatisticas_mandante = models.OneToOneField(
@@ -227,18 +228,18 @@ class Partida(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="partida_como_estatisticas_mandante",
+        related_name='partida_como_estatisticas_mandante',
     )
     estatisticas_visitante = models.OneToOneField(
         Estatistica,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="partida_como_estatisticas_visitante",
+        related_name='partida_como_estatisticas_visitante',
     )
 
     def __str__(self):
-        return f"{self.mandante.clube.nome} x {self.visitante.clube.nome}"
+        return f'{self.mandante.clube.nome} x {self.visitante.clube.nome}'
 
     def clean(
         self,
@@ -247,37 +248,37 @@ class Partida(models.Model):
 
         if self.mandante == self.visitante:
             raise ValidationError(
-                {"visitante": "o mandante não pode jogar contra ele mesmo."}
+                {'visitante': 'o mandante não pode jogar contra ele mesmo.'}
             )
         if self.mandante.campeonato != self.campeonato:
             raise ValidationError(
-                {"mandante": f"O mandante não pertence ao campeonato {self.campeonato}"}
+                {'mandante': f'O mandante não pertence ao campeonato {self.campeonato}'}
             )
         if self.visitante.campeonato != self.campeonato:
             raise ValidationError(
                 {
-                    "visitante": f"O visitante não pertence ao campeonato {self.campeonato}"
+                    'visitante': f'O visitante não pertence ao campeonato {self.campeonato}'
                 }
             )
 
 
 class Atleta(models.Model):
     class PosicaoPrincipalAtleta(models.TextChoices):
-        GK = "GK", "Goleiro"
-        CB = "CB", "Zagueiro Central"
-        LB = "LB", "Lateral Esquerdo"
-        RB = "RB", "Lateral Direito"
-        LWB = "LWB", "Lateral Ofensivo Esquerdo"
-        RWB = "RWB", "Lateral Ofensivo Direito"
-        DM = "DM", "Volante"
-        CM = "CM", "Meio Campo Central"
-        AM = "AM", "Meia Ofensivo"
-        LM = "LM", "Ala Esquerdo"
-        RM = "RM", "Ala Direito"
-        LW = "LW", "Ponta Esquerda"
-        RW = "RW", "Ponta Direita"
-        CF = "CF", "Centroavante"
-        ST = "ST", "Atacante"
+        GK = 'GK', 'Goleiro'
+        CB = 'CB', 'Zagueiro Central'
+        LB = 'LB', 'Lateral Esquerdo'
+        RB = 'RB', 'Lateral Direito'
+        LWB = 'LWB', 'Lateral Ofensivo Esquerdo'
+        RWB = 'RWB', 'Lateral Ofensivo Direito'
+        DM = 'DM', 'Volante'
+        CM = 'CM', 'Meio Campo Central'
+        AM = 'AM', 'Meia Ofensivo'
+        LM = 'LM', 'Ala Esquerdo'
+        RM = 'RM', 'Ala Direito'
+        LW = 'LW', 'Ponta Esquerda'
+        RW = 'RW', 'Ponta Direita'
+        CF = 'CF', 'Centroavante'
+        ST = 'ST', 'Atacante'
 
     nome = models.CharField(max_length=50)
     data_nascimento = models.DateField()
@@ -286,7 +287,7 @@ class Atleta(models.Model):
     nacionalidade = models.CharField(max_length=40)
 
     clube = models.ForeignKey(
-        Clube, on_delete=models.SET_NULL, null=True, blank=True, related_name="elenco"
+        Clube, on_delete=models.SET_NULL, null=True, blank=True, related_name='elenco'
     )
     numero_camisa = models.PositiveIntegerField()
     posicao_principal = models.CharField(
@@ -294,4 +295,4 @@ class Atleta(models.Model):
     )
 
     def __str__(self):
-        return f"{self.nome} | {self.clube}"
+        return f'{self.nome} | {self.clube}'

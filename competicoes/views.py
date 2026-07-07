@@ -33,14 +33,14 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
     serializer_class = CampeonatoSerializer
 
     @action(
-        detail=True, methods=["post", "get"], serializer_class=CadastroClubesSerializer
+        detail=True, methods=['post', 'get'], serializer_class=CadastroClubesSerializer
     )
     def cadastrar_clubes(self, request, pk=None):
         campeonato = self.get_object()
 
         context = self.get_serializer_context()
 
-        context["campeonato"] = campeonato
+        context['campeonato'] = campeonato
 
         serializer = self.get_serializer(data=request.data, context=context)
 
@@ -61,21 +61,21 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
 
             return Response(
                 {
-                    "message": "Clubes cadastrados com sucesso!",
-                    "participacoes_criadas": lista_participacoes_criadas,
+                    'message': 'Clubes cadastrados com sucesso!',
+                    'participacoes_criadas': lista_participacoes_criadas,
                 }
             )
         except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception:
             # Caso ocorra qualquer outro erro imprevisto
             return Response(
-                {"error": "Erro interno ao gerar a tabela."},
+                {'error': 'Erro interno ao gerar a tabela.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @action(detail=True, methods=["post", "get"])
+    @action(detail=True, methods=['post', 'get'])
     def gerar_tabela(self, request, pk=None):
         campeonato = self.get_object()
 
@@ -84,31 +84,31 @@ class CampeonatoViewSet(viewsets.ModelViewSet):
 
             return Response(
                 {
-                    "message": f"Tabela gerada com sucesso! {len(partidas)} partidas criadas."
+                    'message': f'Tabela gerada com sucesso! {len(partidas)} partidas criadas.'
                 },
                 status=status.HTTP_201_CREATED,
             )
 
         except ValueError as e:
             # Se o erro for a falta de paridade ou campeonato já existente
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception:
             # Caso ocorra qualquer outro erro imprevisto
             return Response(
-                {"error": "Erro interno ao gerar a tabela."},
+                {'error': 'Erro interno ao gerar a tabela.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def classificacao(
         self, request, pk=None
     ):  # coloquei o None como padrão porque pode ter algum teste ou algo do tipo que eu queira usar sem passar o pk
         campeonato = self.get_object()
         queryset_classificacao = campeonato.participacoes.annotate(
-            pontos=F("vitorias") * 3 + F("empates"),
-            saldo_de_gols=F("gols_feitos") - F("gols_sofridos"),
-        ).order_by("-pontos", "-vitorias", "-saldo_de_gols", "-gols_feitos")
+            pontos=F('vitorias') * 3 + F('empates'),
+            saldo_de_gols=F('gols_feitos') - F('gols_sofridos'),
+        ).order_by('-pontos', '-vitorias', '-saldo_de_gols', '-gols_feitos')
         dicionario_classificacao = ClassificacaoSerializer(
             queryset_classificacao, many=True
         ).data
@@ -132,7 +132,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
 
         return Partida.objects.all()
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def mostrar_estatisticas(self, request, pk=None, **kwargs):
         partida = self.get_object()
         nome_mandante = partida.mandante.clube.nome
@@ -152,7 +152,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
             }
         )
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def mostrar_escalacoes(self, request, pk=None, **kwargs):
         partida = self.get_object()
         nome_mandante = partida.mandante.clube.nome
@@ -179,7 +179,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
             }
         )
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def placar(self, request, pk=None, **kwargs):
         partida = self.get_object()
 
@@ -210,8 +210,8 @@ class PartidaViewSet(viewsets.ModelViewSet):
             {
                 nome_mandante: quantidade_gols_mandante,
                 nome_visitante: quantidade_gols_visitante,
-                "gols_mandante": lista_dicionarios_gols_mandante,
-                "gols_visitante": lista_dicionarios_gols_visitante,
+                'gols_mandante': lista_dicionarios_gols_mandante,
+                'gols_visitante': lista_dicionarios_gols_visitante,
             }
         )
 
