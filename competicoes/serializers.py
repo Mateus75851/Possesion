@@ -253,6 +253,11 @@ class PartidaSerializer(serializers.ModelSerializer):
                     'estatisticas_visitante': 'Não se pode ter as estatísticas do visitante sem as do mandante'
                 }
             )
+        
+        if escalacao_mandante and not escalacao_visitante:
+            raise serializers.ValidationError({'escalacao_mandante': 'Não se pode ter a escalação do mandante sem a do visitante'})
+        elif escalacao_visitante and not escalacao_mandante:
+            raise serializers.ValidationError({'escalacao_visitante': 'Não se pode ter a escalação do visitante sem a do mandante'})
 
         # validações lógicas que não recorram ao banco
 
@@ -339,7 +344,7 @@ class PartidaSerializer(serializers.ModelSerializer):
         estatisticas_visitante_vieram = bool(
             validated_data.get('estatisticas_visitante')
         )
-
+       
         # extração dos dados
         estatisticas_mandante = validated_data.pop(
             'estatisticas_mandante', instance.estatisticas_mandante
