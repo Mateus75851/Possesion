@@ -159,6 +159,11 @@ class PartidaSerializer(serializers.ModelSerializer):
     def validate_escalacao_mandante(self, escalacao_mandante):
         titulares = [slot for slot in escalacao_mandante if slot['estado'] == 'T']
 
+        goleiros_titulares = [titular for titular in titulares if titular['posicao_assumida'] == 'GK']
+
+        if len(goleiros_titulares) != 1:
+            raise serializers.ValidationError({'escalacao_mandante': f'É necessário que a escalação tenha exatamente 1 goleiro, mas foram recebidos {len(goleiros_titulares)}'})
+
         if len(titulares) != 11:
             raise serializers.ValidationError({'escalacao_mandante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares)} foram dados'})
         
@@ -171,6 +176,11 @@ class PartidaSerializer(serializers.ModelSerializer):
     
     def validate_escalacao_visitante(self, escalacao_visitante):
         titulares = [slot for slot in escalacao_visitante if slot['estado'] == 'T']
+
+        goleiros_titulares = [titular for titular in titulares if titular['posicao_assumida'] == 'GK']
+
+        if len(goleiros_titulares) != 1:
+            raise serializers.ValidationError({'escalacao_visitante': f'É necessário que a escalação tenha exatamente 1 goleiro, mas foram recebidos {len(goleiros_titulares)}'})
 
         if len(titulares) != 11:
             raise serializers.ValidationError({'escalacao_visitante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares)} foram dados'})
