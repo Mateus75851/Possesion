@@ -152,7 +152,7 @@ class Participacao(models.Model):
 
 
 class EscalacaoSlot(models.Model):
-    class PosicaoAssumidaEscalacaoSpace(models.TextChoices):
+    class PosicaoAssumidaEscalacaoSlot(models.TextChoices):
         GK = "GK", "Goleiro"
         CB = "CB", "Zagueiro Central"
         LB = "LB", "Lateral Esquerdo"
@@ -175,9 +175,8 @@ class EscalacaoSlot(models.Model):
     atleta = models.ForeignKey("Atleta", on_delete=models.CASCADE)
 
     posicao_assumida = models.CharField(
-        max_length=20, choices=PosicaoAssumidaEscalacaoSpace.choices
+        max_length=20, choices=PosicaoAssumidaEscalacaoSlot.choices
     )
-
 
 class Gol(models.Model):
     partida = models.ForeignKey(
