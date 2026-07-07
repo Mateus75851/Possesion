@@ -125,15 +125,19 @@ class EstatisticaSerializer(serializers.ModelSerializer):
 
 
 class EscalacaoSlotSerializer(serializers.ModelSerializer):
-    clube = serializers.SerializerMethodField(read_only=True)
-
     class Meta:
         model = EscalacaoSlot
-        fields = '__all__'
+        fields = ['atleta', 'posicao_assumida', 'estado']
+    
+    def validate(self, data):
+        instance = self.instance
+        posicao_assumida = data.get('posicao_assumida', instance.posicao_assumida if instance else None)
+        estado = data.get('estado'. instance.estado if instance else 'R')
 
-    def get_clube(self, obj):
-        clube = obj.atleta.clube.nome
-        return clube
+        if estado == 'T' and posicao_assumida == None:
+            raise serializers.ValidationError({'posicao_assumida': 'Um titular precisa ter uma posição definida'})
+
+        return data
 
     def to_representation(self, instance):
         representacao = super().to_representation(instance)
@@ -172,9 +176,9 @@ class PartidaSerializer(serializers.ModelSerializer):
             'escalacao_mandante',
             [
                 {
-                    'posicao_assumida': slot.posicao_assumida,
-                    'partida': slot.partida,
                     'atleta': slot.atleta,
+                    'posicao_assumida': slot.posicao_assumida,
+                    'estado': slot.estado,
                 }
                 for slot in instance.escalacao_slots.filter(
                     atleta__clube=mandante.clube
@@ -187,9 +191,9 @@ class PartidaSerializer(serializers.ModelSerializer):
             'escalacao_visitante',
             [
                 {
-                    'posicao_assumida': slot.posicao_assumida,
-                    'partida': slot.partida,
                     'atleta': slot.atleta,
+                    'posicao_assumida': slot.posicao_assumida,
+                    'estado': slot.estado,
                 }
                 for slot in instance.escalacao_slots.filter(
                     atleta__clube=visitante.clube
@@ -227,6 +231,22 @@ class PartidaSerializer(serializers.ModelSerializer):
                     'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'
                 }
             )
+        
+        titulares_mandante = [slot for slot in escalacao_mandante if slot['estado'] == 'T']
+        titulares_visitante = [slot for slot in escalacao_visitante if slot['estado'] == 'T']
+
+        if len(titulares_mandante) != 11:
+            raise serializers.ValidationError({'escalacao_mandante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares_mandante)} foram dados'})
+        if len(titulares_visitante) != 11:
+            raise serializers.ValidationError({'escalacao_visitante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares_visitante)} foram dados'})
+
+        reservas_mandante_que_entram = [slot for slot in escalacao_mandante if slot['estado'] == 'R' and slot['posicao_assumida'] != None]
+        reservas_visitante_que_entram = [slot for slot in escalacao_visitante if slot['estado'] == 'R' and slot['posicao_assumida'] != None]
+
+        if len(reservas_mandante_que_entram) > 5:
+            raise serializers.ValidationError({'escalacao_mandante': f'{len(reservas_mandante_que_entram)} reservas participam da partida, mas o limite de substituições é 5'})
+        if len(reservas_visitante_que_entram) > 5:
+            raise serializers.ValidationError({'escalacao_visitante': f'{len(reservas_visitante_que_entram)} reservas participam da partida, mas o limite de substituições é 5'})
 
         if estatisticas_mandante:
             porcentagem_posse_de_bola_mandante = (

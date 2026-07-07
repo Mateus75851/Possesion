@@ -169,15 +169,21 @@ class EscalacaoSlot(models.Model):
         CF = 'CF', 'Centroavante'
         ST = 'ST', 'Atacante'
 
+    class EstadoEscalacaoSlot(models.TextChoices):
+        T = 'T', 'Titular'
+        R = 'R', 'Reserva'
 
     partida = models.ForeignKey(
         'Partida', on_delete=models.CASCADE, related_name='escalacao_slots'
     )
+
     atleta = models.ForeignKey('Atleta', on_delete=models.CASCADE)
 
     posicao_assumida = models.CharField(
-        max_length=20, choices=PosicaoAssumidaEscalacaoSlot.choices
+        max_length=20, choices=PosicaoAssumidaEscalacaoSlot.choices, blank=True, null=True
     )
+
+    estado = models.CharField(max_length=10, choices=EstadoEscalacaoSlot.choices, default='R')
 
 class Gol(models.Model):
     partida = models.ForeignKey(
