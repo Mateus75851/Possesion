@@ -156,6 +156,32 @@ class PartidaSerializer(serializers.ModelSerializer):
         model = Partida
         fields = '__all__'
 
+    def validate_escalacao_mandante(self, escalacao_mandante):
+        titulares_mandante = [slot for slot in escalacao_mandante if slot['estado'] == 'T']
+
+        if len(titulares_mandante) != 11:
+            raise serializers.ValidationError({'escalacao_mandante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares_mandante)} foram dados'})
+        
+        reservas_mandante_que_entram = [slot for slot in escalacao_mandante if slot['estado'] == 'R' and slot['posicao_assumida'] != None]
+
+        if len(reservas_mandante_que_entram) > 5:
+            raise serializers.ValidationError({'escalacao_mandante': f'{len(reservas_mandante_que_entram)} reservas participam da partida, mas o limite de substituições é 5'})
+
+        return escalacao_mandante
+    
+    def validate_escalacao_visitante(self, escalacao_visitante):
+        titulares_visitante = [slot for slot in escalacao_visitante if slot['estado'] == 'T']
+
+        if len(titulares_visitante) != 11:
+            raise serializers.ValidationError({'escalacao_visitante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares_visitante)} foram dados'})
+
+        reservas_visitante_que_entram = [slot for slot in escalacao_visitante if slot['estado'] == 'R' and slot['posicao_assumida'] != None]
+
+        if len(reservas_visitante_que_entram) > 5:
+            raise serializers.ValidationError({'escalacao_visitante': f'{len(reservas_visitante_que_entram)} reservas participam da partida, mas o limite de substituições é 5'})
+
+        return escalacao_visitante
+
     def validate(self, data):
         # extração dos dados
         instance = self.instance
@@ -231,22 +257,6 @@ class PartidaSerializer(serializers.ModelSerializer):
                     'status': 'Não se pode ter uma partida não finalizada já com as estatisticas'
                 }
             )
-        
-        titulares_mandante = [slot for slot in escalacao_mandante if slot['estado'] == 'T']
-        titulares_visitante = [slot for slot in escalacao_visitante if slot['estado'] == 'T']
-
-        if len(titulares_mandante) != 11:
-            raise serializers.ValidationError({'escalacao_mandante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares_mandante)} foram dados'})
-        if len(titulares_visitante) != 11:
-            raise serializers.ValidationError({'escalacao_visitante': f'A escalação precisa ter exatamente 11 titulares, mas {len(titulares_visitante)} foram dados'})
-
-        reservas_mandante_que_entram = [slot for slot in escalacao_mandante if slot['estado'] == 'R' and slot['posicao_assumida'] != None]
-        reservas_visitante_que_entram = [slot for slot in escalacao_visitante if slot['estado'] == 'R' and slot['posicao_assumida'] != None]
-
-        if len(reservas_mandante_que_entram) > 5:
-            raise serializers.ValidationError({'escalacao_mandante': f'{len(reservas_mandante_que_entram)} reservas participam da partida, mas o limite de substituições é 5'})
-        if len(reservas_visitante_que_entram) > 5:
-            raise serializers.ValidationError({'escalacao_visitante': f'{len(reservas_visitante_que_entram)} reservas participam da partida, mas o limite de substituições é 5'})
 
         if estatisticas_mandante:
             porcentagem_posse_de_bola_mandante = (
