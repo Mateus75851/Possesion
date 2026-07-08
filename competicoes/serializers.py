@@ -344,7 +344,9 @@ class PartidaSerializer(serializers.ModelSerializer):
         estatisticas_visitante_vieram = bool(
             validated_data.get('estatisticas_visitante')
         )
-       
+        escalacao_mandante_veio = bool(validated_data.get('escalacao_mandante'))
+        escalacao_visitante_veio = bool(validated_data.get('escalacao_visitante'))
+
         # extração dos dados
         estatisticas_mandante = validated_data.pop(
             'estatisticas_mandante', instance.estatisticas_mandante
@@ -356,6 +358,11 @@ class PartidaSerializer(serializers.ModelSerializer):
         estatisticas_visitante_antigas = instance.estatisticas_visitante
         mandante = validated_data.get('mandante', instance.mandante)
         visitante = validated_data.get('visitante', instance.visitante)
+        escalacao_mandante_antiga = instance.escalacao_slots.filter(atleta__clube=mandante.clube)
+        escalacao_visitante_antiga = instance.escalacao_slots.filter(atleta__clube=visitante.clube)
+
+        escalacao_mandante = validated_data.pop('escalacao_mandante', None)
+        escalacao_visitante = validated_data.pop('escalacao_visitante', None)
 
         partida_atualizada = super().update(instance, validated_data)
 
@@ -396,6 +403,32 @@ class PartidaSerializer(serializers.ModelSerializer):
                 # recalcula as participações
                 mandante.recalcular_totais()
                 visitante.recalcular_totais()
+
+        if escalacao_mandante_veio:
+            with transaction.atomic():
+                for slot_antigo in escalacao_mandante_antiga:
+                    slot_existe = bool([slot for slot in escalacao_mandante if slot.get('atleta') == slot_antigo.atleta])
+                    if not slot_existe:
+                        slot_antigo.delete()
+
+                for slot in escalacao_mandante:
+                    partida_atualizada.escalacao_slots.update_or_create(
+                        atleta=slot.get('atleta'),
+                        defaults=slot,
+                        )
+        
+        if escalacao_visitante_veio:
+            with transaction.atomic():
+                for slot_antigo in escalacao_visitante_antiga:
+                    slot_existe = bool([slot for slot in escalacao_visitante if slot.get('atleta') == slot_antigo.atleta])
+                    if not slot_existe:
+                        slot_antigo.delete()
+
+                for slot in escalacao_visitante:
+                    partida_atualizada.escalacao_slots.update_or_create(
+                        atleta=slot.get('atleta'),
+                        defaults=slot,
+                        )
 
         return partida_atualizada
 
